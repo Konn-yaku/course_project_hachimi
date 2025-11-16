@@ -7,6 +7,7 @@ from app.core.config import settings
 
 from app.api.v1 import files as files_router
 from app.api.v1 import media as media_router
+from app.api.v1 import auth as auth_router
 
 app = FastAPI(title="Home Cloud API")
 
@@ -50,4 +51,10 @@ app.include_router(
     media_router.router,  # <-- 2. 包含新路由
     prefix="/api/v1/media",
     tags=["Media Library"] # <-- 在 /docs 中显示为 "Media Library"
+)
+
+app.include_router(
+    auth_router.router,
+    prefix="/api/v1/auth",
+    tags=["Auth"]
 )

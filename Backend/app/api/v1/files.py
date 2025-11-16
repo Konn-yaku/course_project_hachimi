@@ -2,11 +2,12 @@
 import os
 from pathlib import Path
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, Depends
 
 from pydantic import BaseModel
 
-from app.core.config import settings  # 导入我们的根路径
+from app.core.config import settings
+from app.core.security import get_current_user
 from app.models.file import DirectoryListing, FileItem
 
 router = APIRouter()
@@ -47,8 +48,9 @@ def get_real_path(user_path: str) -> Path:
 
 @router.get("/browse", response_model=DirectoryListing)
 async def browse_directory(
-        # Query() 定义了一个查询参数, 默认值是 "." (代表根目录)
-        path: str = Query(default=".", description="要浏览的相对路径")
+    # Query() 定义了一个查询参数, 默认值是 "." (代表根目录)
+    path: str = Query(default=".", description="要浏览的相对路径"),
+    user: dict = Depends(get_current_user)
 ):
     """
     浏览媒体根目录下的文件和文件夹。
@@ -86,7 +88,8 @@ async def browse_directory(
 
 @router.post("/mkdir")
 async def create_directory(
-        request: MkdirRequest
+    request: MkdirRequest,
+    user: dict = Depends(get_current_user)
 ):
     """
     在指定的相对路径下创建一个新文件夹。

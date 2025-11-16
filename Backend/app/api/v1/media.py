@@ -1,9 +1,10 @@
 # app/api/v1/media.py
 import os
 from pathlib import Path
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 
 from app.core.config import settings
+from app.core.security import get_current_user
 from app.models.file import MediaItem, PhotoItem
 
 router = APIRouter()
@@ -25,7 +26,7 @@ def get_media_path(media_type: str) -> Path:
 
 
 @router.get("/anime", response_model=list[MediaItem])
-async def get_anime_library():
+async def get_anime_library(user: dict = Depends(get_current_user)):
     """
     扫描 Anime 目录，查找子文件夹和海报。
     (新逻辑：查找子文件夹中的 *任何* 图像文件)
@@ -88,7 +89,7 @@ async def get_anime_library():
 
 
 @router.get("/movies", response_model=list[MediaItem])
-async def get_movie_library():
+async def get_movie_library(user: dict = Depends(get_current_user)):
     """
     扫描 Movies 目录，查找子文件夹和海报。
     (逻辑与 get_anime_library 完全相同)
@@ -137,7 +138,7 @@ async def get_movie_library():
     return library
 
 @router.get("/photos", response_model=list[PhotoItem])
-async def get_photo_library():
+async def get_photo_library(user: dict = Depends(get_current_user)):
     """
     扫描 Photos 目录，查找所有图片文件。
     (与 Anime/Movies 不同，这个是平铺的)

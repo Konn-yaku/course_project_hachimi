@@ -14,10 +14,17 @@ class DirectoryListing(BaseModel):
     path: str  # 当前浏览的相对路径
     items: list[FileItem]
 
+
 class MediaItem(BaseModel):
     title: str
     poster_url: str
 
+
 class PhotoItem(BaseModel):
     src_url: str
     thumbnail_url: str
+
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
