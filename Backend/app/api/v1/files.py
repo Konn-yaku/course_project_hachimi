@@ -4,10 +4,17 @@ from pathlib import Path
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query
 
+from pydantic import BaseModel
+
 from app.core.config import settings  # 导入我们的根路径
 from app.models.file import DirectoryListing, FileItem
 
 router = APIRouter()
+
+
+class MkdirRequest(BaseModel):
+    path: str = "."  # 将在新文件夹创建在哪个相对路径下
+    folder_name: str  # 新文件夹的名称
 
 
 def get_real_path(user_path: str) -> Path:
@@ -75,3 +82,54 @@ async def browse_directory(
         path=path,  # 返回用户请求的相对路径
         items=file_items
     )
+
+
+@router.post("/mkdir")
+async def create_directory(
+        request: MkdirRequest
+):
+    """
+    在指定的相对路径下创建一个新文件夹。
+    """
+
+    # 1. 验证新文件夹名称的安全性
+    # 确保名称中不含 ".." 或 "/"
+    if ".." in request.folder_name or "/" in request.folder_name or "\\" in request.folder_name:
+        raise HTTPException(
+            status_code=400,
+            detail="非法的文件夹名称"
+        )
+
+    try:
+        # 2. 获取 *父* 目录的真实路径
+        parent_dir = get_real_path(request.path)
+    except HTTPException as e:
+        # 如果 get_real_path 失败 (例如, 越界或路径非法)
+        raise e
+
+    # 3. 确保父目录是一个目录
+    if not parent_dir.is_dir():
+        raise HTTPException(status_code=400, detail="目标路径不是一个目录")
+
+    # 4. 构建新文件夹的完整路径
+    new_folder_path = parent_dir.joinpath(request.folder_name)
+
+    # 5. 检查文件夹是否已存在
+    if new_folder_path.exists():
+        raise HTTPException(
+            status_code=409,  # 409 Conflict 是一个很合适的状态码
+            detail="该名称的文件夹或文件已存在"
+        )
+
+    try:
+        # 6. 创建目录
+        os.makedirs(new_folder_path)
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="没有权限在此位置创建文件夹")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"创建文件夹时出错: {e}")
+
+    return {
+        "message": "文件夹创建成功",
+        "new_folder_path": f"{request.path}/{request.folder_name}"
+    }
