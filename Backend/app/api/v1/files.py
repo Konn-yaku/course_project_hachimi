@@ -2,7 +2,7 @@
 import os
 from pathlib import Path
 from datetime import datetime
-from fastapi import APIRouter, HTTPException, Query, Depends
+from fastapi import APIRouter, HTTPException, Query, Depends, UploadFile, File, Form
 
 from pydantic import BaseModel
 
@@ -84,6 +84,65 @@ async def browse_directory(
         path=path,  # 返回用户请求的相对路径
         items=file_items
     )
+
+
+@router.post("/upload")
+async def upload_files(
+        path: str = Form(default=".", description="文件上传的目标相对路径"),
+        files: list[UploadFile] = File(description="要上传的文件列表"),
+        user: dict = Depends(get_current_user)  # 确保有这个守门人
+):
+    """
+    将一个或多个文件上传到指定的相对路径。
+    文件将被存储在 MEDIA_ROOT_PATH + path 指定的目录下。
+    """
+    uploaded_file_names = []
+
+    try:
+        # 获取目标目录的真实路径并确保它在 MEDIA_ROOT_PATH 内
+        # 这一步也会自动创建目录如果它不存在
+        destination_dir = get_real_path(path)
+
+        # 确保目标是一个目录
+        if not destination_dir.is_dir():
+            raise HTTPException(status_code=400, detail="目标路径不是一个目录")
+
+        for file in files:
+            file_path = destination_dir.joinpath(file.filename)
+
+            # 检查文件是否已经存在
+            if file_path.exists():
+                raise HTTPException(status_code=409, detail=f"文件 '{file.filename}' 已存在")
+
+            try:
+                # 异步写入文件
+                with open(file_path, "wb") as buffer:
+                    # 使用 while True 来确保读取完所有块
+                    while contents := await file.read(1024 * 1024):  # 每次读取 1MB
+                        buffer.write(contents)
+                uploaded_file_names.append(file.filename)
+            except Exception as e:
+                # 清理已上传的文件（可选，但通常推荐）
+                for uploaded_name in uploaded_file_names:
+                    try:
+                        os.remove(destination_dir.joinpath(uploaded_name))
+                    except OSError:
+                        pass  # 忽略清理失败
+                raise HTTPException(status_code=500, detail=f"上传文件 '{file.filename}' 失败: {e}")
+            finally:
+                await file.close()  # 确保关闭上传文件流
+
+    except HTTPException:
+        raise  # 重新抛出已处理的HTTPException
+    except Exception as e:
+        # 捕获其他所有未处理的异常
+        raise HTTPException(status_code=500, detail=f"文件上传过程中发生意外错误: {e}")
+
+    return {
+        "message": f"成功上传 {len(uploaded_file_names)} 个文件",
+        "uploaded_files": uploaded_file_names,
+        "destination_path": path
+    }
 
 
 @router.post("/mkdir")
