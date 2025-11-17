@@ -4,8 +4,7 @@ from pathlib import Path
 from fastapi import APIRouter, HTTPException, Depends
 
 from app.core.config import settings
-from app.core.security import get_current_user
-from app.models.file import MediaItem, PhotoItem
+from app.models.file import MediaItem
 
 router = APIRouter()
 
@@ -26,7 +25,7 @@ def get_media_path(media_type: str) -> Path:
 
 
 @router.get("/anime", response_model=list[MediaItem])
-async def get_anime_library(user: dict = Depends(get_current_user)):
+async def get_anime_library():
     """
     扫描 Anime 目录，查找子文件夹和海报。
     (新逻辑：查找子文件夹中的 *任何* 图像文件)
@@ -89,7 +88,7 @@ async def get_anime_library(user: dict = Depends(get_current_user)):
 
 
 @router.get("/movies", response_model=list[MediaItem])
-async def get_movie_library(user: dict = Depends(get_current_user)):
+async def get_movie_library():
     """
     扫描 Movies 目录，查找子文件夹和海报。
     (逻辑与 get_anime_library 完全相同)
@@ -136,38 +135,3 @@ async def get_movie_library(user: dict = Depends(get_current_user)):
 
     library.sort(key=lambda x: x.title)
     return library
-
-@router.get("/photos", response_model=list[PhotoItem])
-async def get_photo_library(user: dict = Depends(get_current_user)):
-    """
-    扫描 Photos 目录，查找所有图片文件。
-    (与 Anime/Movies 不同，这个是平铺的)
-    """
-    photos_dir = get_media_path("Photos") # 扫描 my_media_files/Photos
-    photos = []
-
-    try:
-        # 遍历 "Photos" 目录下的所有条目
-        for entry in os.scandir(photos_dir):
-            # 这次我们只关心文件
-            if not entry.is_file():
-                continue
-
-            file_ext = Path(entry.name).suffix.lower()
-
-            # 检查是否是图片
-            if file_ext in ALLOWED_POSTER_EXTENSIONS:
-                photo_name = entry.name
-
-                # 构建 URL: /static_media/Photos/my_image.jpg
-                photo_url = f"/static_media/Photos/{photo_name}"
-
-                photos.append(PhotoItem(
-                    src_url=photo_url,
-                    thumbnail_url=photo_url # 目前缩略图和原图使用同一个
-                ))
-
-    except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限读取 Photos 目录")
-
-    return photos

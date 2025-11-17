@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     # 定义你的配置变量及其默认值
     MEDIA_ROOT_PATH: Path = Path("./my_media_files")
     FRONTEND_ORIGIN: str = "http://localhost:8000"
+    TMDB_API_KEY: str = ""
 
     class Config:
         # 告诉 Pydantic 从 .env 文件加载

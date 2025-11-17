@@ -7,8 +7,8 @@ from fastapi import APIRouter, HTTPException, Query, Depends, UploadFile, File, 
 from pydantic import BaseModel
 
 from app.core.config import settings
-from app.core.security import get_current_user
 from app.models.file import DirectoryListing, FileItem
+from app.services.tmdb import is_video_file, analyze_filename, download_poster
 
 router = APIRouter()
 
@@ -49,8 +49,7 @@ def get_real_path(user_path: str) -> Path:
 @router.get("/browse", response_model=DirectoryListing)
 async def browse_directory(
     # Query() 定义了一个查询参数, 默认值是 "." (代表根目录)
-    path: str = Query(default=".", description="要浏览的相对路径"),
-    user: dict = Depends(get_current_user)
+    path: str = Query(default=".", description="要浏览的相对路径")
 ):
     """
     浏览媒体根目录下的文件和文件夹。
@@ -90,65 +89,90 @@ async def browse_directory(
 async def upload_files(
         path: str = Form(default=".", description="文件上传的目标相对路径"),
         files: list[UploadFile] = File(description="要上传的文件列表"),
-        user: dict = Depends(get_current_user)  # 确保有这个守门人
+        # user: dict = Depends(get_current_user) # <-- 之前让你删掉了鉴权，这里不需要加回来
 ):
     """
-    将一个或多个文件上传到指定的相对路径。
-    文件将被存储在 MEDIA_ROOT_PATH + path 指定的目录下。
+    智能上传：自动识别视频文件，创建对应文件夹并下载海报。
     """
-    uploaded_file_names = []
+    uploaded_details = []
 
     try:
-        # 获取目标目录的真实路径并确保它在 MEDIA_ROOT_PATH 内
-        # 这一步也会自动创建目录如果它不存在
-        destination_dir = get_real_path(path)
-
-        # 确保目标是一个目录
-        if not destination_dir.is_dir():
+        base_destination_dir = get_real_path(path)
+        if not base_destination_dir.is_dir():
             raise HTTPException(status_code=400, detail="目标路径不是一个目录")
 
         for file in files:
-            file_path = destination_dir.joinpath(file.filename)
+            # === 智能识别逻辑开始 ===
+            final_folder = base_destination_dir
+            poster_path_from_tmdb = None
+            recognition_status = "未识别/普通文件"
 
-            # 检查文件是否已经存在
+            # 1. 检查是否是视频
+            if is_video_file(file.filename):
+                print(f"正在识别视频: {file.filename} ...")
+
+                # 2. 调用我们的 TMDB 服务
+                official_title, media_type, poster_ext, _ = analyze_filename(file.filename)
+
+                if official_title:
+                    # 3. 识别成功！
+                    # 决定新文件夹的名字。例如: "Avatar (2009)" 或者只是 "Avatar"
+                    # 为了简单，我们直接用官方标题。
+                    # 注意：我们要处理非法字符 (比如 Windows 不允许文件名包含 : ? 等)
+                    safe_title = "".join([c for c in official_title if c not in r'\/:*?"<>|'])
+
+                    # 创建子目录
+                    new_sub_folder = base_destination_dir.joinpath(safe_title)
+                    if not new_sub_folder.exists():
+                        os.makedirs(new_sub_folder)
+
+                    # 更新保存路径
+                    final_folder = new_sub_folder
+                    poster_path_from_tmdb = poster_ext
+                    recognition_status = f"识别成功: {safe_title} ({media_type})"
+                else:
+                    print("TMDB 未找到匹配项")
+
+            # === 智能识别逻辑结束 ===
+
+            # 4. 保存文件 (存到 final_folder)
+            file_path = final_folder.joinpath(file.filename)
+
             if file_path.exists():
-                raise HTTPException(status_code=409, detail=f"文件 '{file.filename}' 已存在")
+                # 简单处理：如果文件已存在，跳过 (或者你可以改为覆盖/重命名)
+                uploaded_details.append(f"{file.filename} (跳过: 已存在)")
+                continue
 
             try:
-                # 异步写入文件
                 with open(file_path, "wb") as buffer:
-                    # 使用 while True 来确保读取完所有块
-                    while contents := await file.read(1024 * 1024):  # 每次读取 1MB
+                    while contents := await file.read(1024 * 1024):
                         buffer.write(contents)
-                uploaded_file_names.append(file.filename)
+
+                # 5. 如果有海报，下载海报 (保存到 final_folder)
+                if poster_path_from_tmdb:
+                    download_poster(poster_path_from_tmdb, str(final_folder))
+
+                uploaded_details.append(f"{file.filename} -> {recognition_status}")
+
             except Exception as e:
-                # 清理已上传的文件（可选，但通常推荐）
-                for uploaded_name in uploaded_file_names:
-                    try:
-                        os.remove(destination_dir.joinpath(uploaded_name))
-                    except OSError:
-                        pass  # 忽略清理失败
-                raise HTTPException(status_code=500, detail=f"上传文件 '{file.filename}' 失败: {e}")
+                uploaded_details.append(f"{file.filename} (失败: {str(e)})")
             finally:
-                await file.close()  # 确保关闭上传文件流
+                await file.close()
 
     except HTTPException:
-        raise  # 重新抛出已处理的HTTPException
+        raise
     except Exception as e:
-        # 捕获其他所有未处理的异常
-        raise HTTPException(status_code=500, detail=f"文件上传过程中发生意外错误: {e}")
+        raise HTTPException(status_code=500, detail=f"上传过程中发生错误: {e}")
 
     return {
-        "message": f"成功上传 {len(uploaded_file_names)} 个文件",
-        "uploaded_files": uploaded_file_names,
-        "destination_path": path
+        "message": "上传处理完成",
+        "details": uploaded_details
     }
 
 
 @router.post("/mkdir")
 async def create_directory(
-    request: MkdirRequest,
-    user: dict = Depends(get_current_user)
+    request: MkdirRequest
 ):
     """
     在指定的相对路径下创建一个新文件夹。
