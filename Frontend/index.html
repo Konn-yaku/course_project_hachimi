@@ -206,6 +206,19 @@
     .fm-row{ display:grid; grid-template-columns: 40px 2fr 1fr 1fr 1fr; align-items:center; gap: 8px; padding: 10px 12px; border-bottom:1px solid var(--border); }
     .fm-row:last-child{ border-bottom: none; }
     .fm-cell{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    /* File Manager hover & cursor */
+    .fm-row .fm-cell{
+      cursor: inherit;      /* 子元素跟随整行的鼠标样式 */
+      user-select: none;    /* 防止变成文字选中光标 */
+    }
+
+    /* 只有可点击的“文件夹行”变小手 + 变色 */
+    .fm-row[data-is-dir="true"]{
+      cursor: pointer;
+    }
+    .fm-row[data-is-dir="true"]:hover{
+      background: var(--brand-50);
+    }
 
     .icon{ width:18px; height:18px; }
 
@@ -250,7 +263,7 @@
         <button data-target="photos">
           <!-- photo icon -->
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m8 14 3-3 4 5"/><circle cx="9" cy="10" r="1.5"/></svg>
-          <span>Photo/Video</span>
+          <span>Photos</span>
         </button>
         <button data-target="files">
           <!-- folder icon -->
@@ -300,8 +313,9 @@
       <!-- Files View (Explorer-like) -->
       <section id="view-files" class="panel" hidden>
         <div class="fm-toolbar">
-          <div class="fm-path" id="fmPath">This PC > NAS (Z:) > Media</div>
+          <div class="fm-path" id="fmPath">Media</div>
           <div class="fm-actions">
+            <button class="btn" id="fmBackBtn">⬅ Back</button>
             <button class="btn">New Folder</button>
             <button class="btn">Upload</button>
           </div>
@@ -314,12 +328,27 @@
             <div class="fm-cell">Modified</div>
             <div class="fm-cell hide-sm">Size</div>
           </div>
+
+          <!-- 这一行是关键，新加的容器 -->
+          <div id="fileTableBody"></div>
         </div>
       </section>
     </main>  </div>  <input type="file" id="imgPicker" accept="image/*" multiple style="display:none" />  <script>
     // =====================================================
     // Minimal JS for view switching + sample placeholders
     // =====================================================
+    // ============= File Manager 状态 =============
+    let currentPath = '.';       // 当前浏览的路径，相对 my_media_folder
+    let filesLoadedOnce = false; // 是否已经加载过（避免每次切换都重新拉）
+    const fmPathEl = document.getElementById('fmPath');
+    
+    //后端地址（开发阶段）
+    const API_BASE = 'http://localhost:8000/api/v1';
+    const API_MEDIA = `${API_BASE}/media`;
+    const API_FILES = `${API_BASE}/files`;
+
+    // 后端根地址，用来拼图片 URL
+    const API_ROOT = 'http://localhost:8000';
     const nav = document.getElementById('nav');
     const title = document.getElementById('viewTitle');
     const views = {
@@ -329,120 +358,331 @@
       files: document.getElementById('view-files')
     };
 
-    nav.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-target]');
-      if(!btn) return;
-      const target = btn.getAttribute('data-target');
-
-      // toggle active button
-      [...nav.querySelectorAll('button')].forEach(b => b.classList.toggle('active', b === btn));
-
-      // toggle views
-      Object.entries(views).forEach(([key, el]) => {
-        el.hidden = key !== target;
-      });
-
-      document.body.dataset.view = target;
-
-      const mapping = { anime: 'Anime', movies: 'Movies', photos: 'Photo Library', files: 'File Manager' };
-      title.textContent = mapping[target] || 'Home Cloud';
-    });
-
     // -----------------------------------------------------
     // Placeholder content so the layout is visible now
     // You can replace these arrays with scraped data later.
     // -----------------------------------------------------
     let animeSeed = [
-      { title: 'SPY×FAMILY Season 3', poster: 'Anime/SPY×FAMILY Season 3.webp' },
-      { title: 'ウマ娘 シンデレラグレイ Part 2',       poster: 'Anime/ウマ娘 シンデレラグレイ Part 2.webp' },
-      { title: 'ONE PUNCH-MAN Season 3',  poster: 'Anime/ONE PUNCH-MAN Season 3.webp' },
-      { title: 'Summer Pocket',     poster: 'Anime/Summer Pocket.webp' },
-      { title: 'Alma-chan Wants to Have a family!',      poster: 'Anime/Alma-chan Wants to Have a family!.webp' },
-      { title: 'Frieren Beyond Journey\'s End',        poster: 'Anime/Frieren Beyond Journey\'s End.webp' },
-      { title: 'Dandadan Season 2',        poster: 'Anime/Dandadan Season 2.webp' },
-      { title: 'WITCH WATCH',        poster: 'Anime/WITCH WATCH.webp' },
-      { title: '私を喰べたい、ひとでなし',        poster: 'Anime/私を喰べたい、ひとでなし.webp' },
-      { title: '負けヒロインが多すぎる!',        poster: 'Anime/負けヒロインが多すぎる!.webp' },
-      { title: 'タコピーの原罪',        poster: 'Anime/タコピーの原罪.webp' },
+      
     ];
 
     let movieSeed = [
-      { title: 'The Godfather',            poster: 'Movie/The Godfather.webp' },
-      { title: 'Your Name',         poster: 'Movie/your name.jpg' },
-      { title: '12.12:THE DAY',           poster: 'Movie/12.12The DAY.jpg' },
+
     ];
 
-    let photoSeed = [
-      { src: 'photo/test photo (1).jpg' },
-      { src: 'photo/test photo (2).jpg' },
-      { src: 'photo/test photo (3).jpg' },
-      { src: 'photo/test photo (4).jpg' },
-      { src: 'photo/test photo (5).jpg' },
-      { src: 'photo/test photo (6).jpg' },
-      { src: 'photo/test photo (7).jpg' },
-      { src: 'photo/test photo (8).jpg' },
-      { src: 'photo/test photo (9).jpg' },
-      { src: 'photo/test photo (10).jpg' },
-      { src: 'photo/test photo (11).jpg' },
-      { src: 'photo/test photo (12).jpg' },
-    ];
+    // ================ Photos ================
+    let photoSeed = [];
 
     function renderAnime(){
       const grid = document.getElementById('animeGrid');
+      if (!grid) return;
+
       grid.innerHTML = animeSeed.map(item => `
         <article class="card">
           <div class="thumb-rect">
-            ${item.poster ? `<img src="${item.poster}" alt="${item.title} poster"/>` : `<span>16:9 Poster</span>`}
+            ${item.poster
+              ? `<img src="${item.poster}" alt="${item.title} poster"/>`
+              : `<span>16:9 Poster</span>`}
           </div>
           <div class="meta">${item.title}</div>
         </article>
       `).join('');
+      
+    }
+        // 从 NAS 后端加载 Anime 列表
+    async function loadAnimeFromApi() {
+      try {
+        const res = await fetch(`${API_MEDIA}/anime`);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch anime: ${res.status}`);
+        }
+
+        const data = await res.json(); 
+        // data 是后端返回的 MediaItem[]，结构类似：
+        // [{ title: "地缚少年花子君", poster_url: "/static_media/Anime/地缚少年花子君/poster.jpg" }, ...]
+
+        // 映射成前端内部使用的结构
+        animeSeed = data.map(item => ({
+          title: item.title,
+          // poster_url 是相对路径，这里拼成完整 URL
+          poster: `${API_ROOT}${item.poster_url}`,
+        }));
+
+        renderAnime();
+      } catch (err) {
+        console.error(err);
+        alert('从 NAS 加载 Anime 失败，先用本地假数据展示');
+
+        // 如果你想在失败时退回以前的静态假数据，可以在这里手动填回一份：
+        if (animeSeed.length === 0) {
+          animeSeed = [
+            { title: 'SPY×FAMILY Season 3', poster: 'Anime/SPY×FAMILY Season 3.webp' },
+            // ... 你原来的那堆占位数据，爱不爱都行
+          ];
+        }
+        renderAnime();
+      }
     }
 
-    function renderMovies(){
-      const grid = document.getElementById('moviesGrid');
+    function renderMovies() {
+      const grid = document.getElementById('moviesGrid'); // 注意是 moviesGrid
+      if (!grid) return;
+
       grid.innerHTML = movieSeed.map(item => `
         <article class="card">
           <div class="thumb-rect">
-            ${item.poster ? `<img src="${item.poster}" alt="${item.title} poster"/>` : `<span>16:9 Poster</span>`}
+            ${item.poster
+              ? `<img src="${item.poster}" alt="${item.title} poster" />`
+              : `<span>16:9 Poster</span>`}
           </div>
           <div class="meta">${item.title}</div>
         </article>
       `).join('');
     }
 
-    function renderPhotos(){
+    // 从 NAS 后端加载 Movies 列表
+    async function loadMoviesFromApi() {
+      try {
+        const res = await fetch(`${API_MEDIA}/movies`);
+        if (!res.ok) {
+          throw new Error(`Failed to fetch movies: ${res.status}`);
+        }
+
+        const data = await res.json(); // 后端返回的 MediaItem[]
+
+        movieSeed = data.map(item => ({
+          title: item.title,
+          // 把 /static_media/... 拼成完整 URL
+          poster: `${API_ROOT}${item.poster_url}`,
+        }));
+
+        renderMovies();
+      } catch (err) {
+        console.error(err);
+        alert('从 NAS 加载 Movies 失败，暂时用本地占位数据');
+
+        if (movieSeed.length === 0) {
+          movieSeed = [
+            { title: 'The Godfather', poster: 'Movie/The Godfather.webp' },
+            { title: '12.12 THE DAY', poster: 'Movie/12.12THE DAY.jpg' },
+          ];
+        }
+        renderMovies();
+      }
+    }
+
+    function renderPhotos() {
       const grid = document.getElementById('photosGrid');
-      grid.innerHTML = photoSeed.map(p => `
-        <div class="thumb-square">${p.src ? `<img src="${p.src}" alt="photo"/>` : ''}</div>
+      if (!grid) return;
+
+      grid.innerHTML = photoSeed.map(item => `
+        <article class="card">
+          <div class="thumb-rect">
+            <img src="${item.src}" alt="${item.title}" />
+          </div>
+          <div class="meta">${item.title}</div>
+        </article>
       `).join('');
     }
 
-    function renderFiles(){
-      const table = document.getElementById('fmTable');
-      const rows = [
-        {icon:'📁', name:'Movies', type:'Folder', mod:'2025-10-07 19:05', size:'—'},
-        {icon:'📁', name:'Anime', type:'Folder', mod:'2025-10-07 19:03', size:'—'},
-        {icon:'📁', name:'Photos', type:'Folder', mod:'2025-10-06 16:14', size:'—'},
-        {icon:'📄', name:'testfile.txt', type:'Text Document', mod:'2025-10-01 10:22', size:'2 KB'}
-      ];
-      const html = rows.map(r => `
-        <div class="fm-row">
-          <div class="fm-cell">${r.icon}</div>
-          <div class="fm-cell">${r.name}</div>
-          <div class="fm-cell">${r.type}</div>
-          <div class="fm-cell">${r.mod}</div>
-          <div class="fm-cell hide-sm">${r.size}</div>
-        </div>
-      `).join('');
-      table.insertAdjacentHTML('beforeend', html);
+    async function loadPhotosFromApi() {
+      try {
+        // 调用文件浏览接口，固定浏览 Photos 目录
+        const res = await fetch(`${API_FILES}/browse?path=Photos`);
+        if (!res.ok) {
+          throw new Error(`Failed to browse Photos: ${res.status}`);
+        }
+
+        const data = await res.json();
+        // data.items 是文件列表
+
+        // 只保留文件（不是文件夹）并且扩展名是图片
+        const imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+        const items = (data.items || []).filter(it => {
+          if (it.is_dir) return false;
+          const lower = it.name.toLowerCase();
+          return imageExts.some(ext => lower.endsWith(ext));
+        });
+
+        // 映射成前端内部使用的结构
+        photoSeed = items.map(it => ({
+          title: it.name,
+          // 拼成 static_media 的 URL：
+          // /static_media/Photos/<文件名>
+          src: `${API_ROOT}/static_media/Photos/${encodeURIComponent(it.name)}`,
+        }));
+
+        renderPhotos();
+      } catch (err) {
+        console.error(err);
+        alert('从 NAS 加载 Photos 失败，暂时用本地占位图片');
+
+        if (photoSeed.length === 0) {
+          photoSeed = [
+            { title: 'Local Photo 1', src: 'Photo/test photo (1).jpg' },
+            { title: 'Local Photo 2', src: 'Photo/test photo (2).jpg' },
+          ];
+        }
+        renderPhotos();
+      }
     }
+
+    function renderFiles(items) {
+      const table = document.getElementById('fileTableBody');
+      if (!table) return;
+
+      table.innerHTML = '';
+
+      if (!items || items.length === 0) {
+        table.innerHTML = `
+          <div class="fm-row">
+            <div class="fm-cell" colspan="5" style="opacity:0.7">This folder is empty.</div>
+          </div>
+        `;
+        return;
+      }
+
+      const rowsHtml = items.map(it => {
+        const icon = it.is_dir ? '📁' : '📄';
+        const type = it.is_dir ? 'Folder' : (it.extension || 'File');
+        const modified = it.modified || '';
+        const size = it.size_readable || '—';
+
+        return `
+          <div class="fm-row" 
+              data-name="${it.name}" 
+              data-is-dir="${it.is_dir}">
+            <div class="fm-cell">${icon}</div>
+            <div class="fm-cell fm-name">${it.name}</div>
+            <div class="fm-cell">${type}</div>
+            <div class="fm-cell">${modified}</div>
+            <div class="fm-cell hide-sm">${size}</div>
+          </div>
+        `;
+      }).join('');
+
+      table.innerHTML = rowsHtml;
+
+      // 更新上面的路径显示
+      if (fmPathEl) {
+        const display = currentPath === '.' ? 'Media' : `Media / ${currentPath}`;
+        fmPathEl.textContent = display;
+      }
+    }
+
+    async function loadFilesFromApi(path = '.') {
+      try {
+        currentPath = path;
+
+        const url = path === '.' 
+          ? `${API_FILES}/browse`
+          : `${API_FILES}/browse?path=${encodeURIComponent(path)}`;
+
+        const res = await fetch(url);
+        if (!res.ok) {
+          throw new Error(`Failed to browse files: ${res.status}`);
+        }
+
+        const data = await res.json();
+        // data.items 是后端返回的 FileItem[]
+        const items = data.items || data.files || []; // 兼容一下字段名
+
+        renderFiles(items);
+        filesLoadedOnce = true;
+      } catch (err) {
+        console.error(err);
+        alert('从 NAS 加载文件列表失败');
+      }
+    }
+
+    // 回退到上一级目录
+    function goUpOneLevel() {
+      if (currentPath === '.') {
+        // 已经在根目录了，不能再退
+        return;
+      }
+
+      const parts = currentPath.split('/');
+      parts.pop(); // 去掉最后一级
+      const parent = parts.length ? parts.join('/') : '.';
+
+      loadFilesFromApi(parent);
+    }
+
+    // 绑定回退按钮
+    const fmBackBtn = document.getElementById('fmBackBtn');
+    if (fmBackBtn) {
+      fmBackBtn.addEventListener('click', () => {
+        goUpOneLevel();
+      });
+    }
+
+
+    // 让 File Manager 里的行可以点击：点文件夹就进入下一层
+    document.addEventListener('click', (event) => {
+      const table = document.getElementById('fmTable');
+      if (!table) return;
+
+      // 只处理 File Manager 里的点击
+      if (!table.contains(event.target)) return;
+
+      const row = event.target.closest('.fm-row');
+      if (!row) return;
+
+      const name = row.dataset.name;
+      const isDir = row.dataset.isDir === 'true';
+
+      // header 行没有 data-name，或者是文件就先不处理
+      if (!name || !isDir) return;
+
+      // 计算新路径：根目录 '.' 加子目录，或在已有路径后面追加
+      const newPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+
+      loadFilesFromApi(newPath);
+    });
+
+
+    // 让 File Manager 里的行可以点击：点文件夹就进入下一层
+    nav.addEventListener('click', (e) => {
+      const btn = e.target.closest('button[data-target]');
+      if (!btn) return;
+      const target = btn.getAttribute('data-target');
+
+      // 1. 切换左侧按钮 active 状态
+      [...nav.querySelectorAll('button')].forEach(b =>
+        b.classList.toggle('active', b === btn)
+      );
+
+      // 2. 切换显示/隐藏视图
+      Object.entries(views).forEach(([key, el]) => {
+        el.hidden = key !== target;
+      });
+
+      // 3. 记录当前视图
+      document.body.dataset.view = target;
+
+      // 4. 切换顶部标题
+      const mapping = { 
+        anime: 'Anime', 
+        movies: 'Movies', 
+        photos: 'Photo Library', 
+        files: 'File Manager' 
+      };
+      title.textContent = mapping[target] || 'Home Cloud';
+
+      // 5. 🚀 如果是第一次进入 File Manager，则加载根目录
+      if (target === 'files' && !filesLoadedOnce) {
+        loadFilesFromApi('.');   // 加载根目录
+        filesLoadedOnce = true;  // 防止重复加载
+      }
+    });
 
     // Initial paint
-    renderAnime();
-    renderMovies();
-    renderPhotos();
-    renderFiles();
+    window.addEventListener('DOMContentLoaded', () => {
+      loadAnimeFromApi();
+      loadMoviesFromApi();
+      loadPhotosFromApi();  // ✅ 用 NAS 真数据
+    });
 
     // default view state marker
     document.body.dataset.view = 'anime';
@@ -468,6 +708,7 @@
         };
     };
     };
+    
   </script>
 </body>
 </html>

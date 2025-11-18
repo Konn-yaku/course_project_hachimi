@@ -13,12 +13,11 @@ app = FastAPI(title="Home Cloud API")
 # --- 2. 配置 CORS ---
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_ORIGIN],
+    allow_origins=["*"],          # 先全部放行，等稳定了再收紧
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
-
 # --- 3. 自动创建媒体目录 ---
 os.makedirs(settings.MEDIA_ROOT_PATH, exist_ok=True)
 print(f"媒体文件将存储在: {settings.MEDIA_ROOT_PATH.resolve()}")
