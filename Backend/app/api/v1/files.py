@@ -262,3 +262,78 @@ async def create_directory(
         "message": "文件夹创建成功",
         "new_folder_path": f"{request.path}/{request.folder_name}"
     }
+
+@router.post("/mkdir")
+async def create_folder(request: MkdirRequest):
+    """
+    在指定 path 下创建一个子文件夹 folder_name
+    """
+    base_root: Path = settings.MEDIA_ROOT_PATH
+
+    # 规范化 path，例如 ".", "", "/Anime/" -> "Anime"
+    rel_path = (request.path or "").strip().strip("/")
+    target_dir = base_root / rel_path if rel_path else base_root
+
+    # 确保目标路径存在
+    if not target_dir.exists():
+        raise HTTPException(status_code=400, detail="目标路径不存在")
+
+    new_folder_path = target_dir / request.folder_name
+
+    # 避免同名
+    if new_folder_path.exists():
+        raise HTTPException(
+            status_code=400,
+            detail="该名称的文件夹或文件已存在"
+        )
+
+    try:
+        new_folder_path.mkdir(parents=False, exist_ok=False)
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="没有权限在此位置创建文件夹")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"创建文件夹时出错: {e}")
+
+    # 返回相对路径，方便前端用
+    rel_new = str((new_folder_path.relative_to(base_root)).as_posix())
+
+    return {
+        "message": "文件夹创建成功",
+        "new_folder_path": rel_new,
+    }
+
+@router.post("/upload")
+async def upload_file(
+    path: str = Form(""),              # 目标目录，相对 MEDIA_ROOT_PATH
+    file: UploadFile = File(...),      # 要上传的文件
+):
+    base_root: Path = settings.MEDIA_ROOT_PATH
+
+    rel_path = (path or "").strip().strip("/")
+    target_dir = base_root / rel_path if rel_path else base_root
+
+    if not target_dir.exists():
+        raise HTTPException(status_code=400, detail="目标路径不存在")
+
+    dest_path = target_dir / file.filename
+
+    try:
+        # 把上传内容写入磁盘
+        with dest_path.open("wb") as f:
+            while True:
+                chunk = await file.read(1024 * 1024)  # 1MB 一块
+                if not chunk:
+                    break
+                f.write(chunk)
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="没有权限写入文件")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"保存文件失败: {e}")
+    finally:
+        await file.close()
+
+    rel_saved = str(dest_path.relative_to(base_root).as_posix())
+    return {
+        "message": "上传成功",
+        "file_path": rel_saved,
+    }

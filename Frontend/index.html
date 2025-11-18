@@ -314,11 +314,11 @@
       <section id="view-files" class="panel" hidden>
         <div class="fm-toolbar">
           <div class="fm-path" id="fmPath">Media</div>
-          <div class="fm-actions">
-            <button class="btn" id="fmBackBtn">⬅ Back</button>
-            <button class="btn">New Folder</button>
-            <button class="btn">Upload</button>
-          </div>
+            <div class="fm-actions">
+              <button class="btn" id="btnNewFolder">New Folder</button>
+              <button class="btn" id="btnUpload">Upload</button>
+              <input type="file" id="fmUploadInput" multiple style="display:none" />
+            </div>
         </div>
         <div class="fm-table" id="fmTable">
           <div class="fm-row header">
@@ -351,6 +351,11 @@
     const API_ROOT = 'http://localhost:8000';
     const nav = document.getElementById('nav');
     const title = document.getElementById('viewTitle');
+
+    const btnNewFolder = document.getElementById('btnNewFolder');
+    const btnUpload = document.getElementById('btnUpload');
+    const fmUploadInput = document.getElementById('fmUploadInput');
+
     const views = {
       anime: document.getElementById('view-anime'),
       movies: document.getElementById('view-movies'),
@@ -676,6 +681,93 @@
         filesLoadedOnce = true;  // 防止重复加载
       }
     });
+
+    // 新建文件夹
+    if (btnNewFolder) {
+      btnNewFolder.addEventListener('click', async () => {
+        const name = prompt('请输入新文件夹名称：');
+        if (!name) return;
+
+        const folderName = name.trim();
+        if (!folderName) return;
+
+        const payload = {
+          // 后端这边我们约定：根目录用空字符串 ""
+          path: currentPath === '.' ? '' : currentPath,
+          folder_name: folderName,
+        };
+
+        try {
+          const res = await fetch(`${API_FILES}/mkdir`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(payload),
+          });
+
+          if (!res.ok) {
+            let errMsg = `创建文件夹失败：${res.status}`;
+            try {
+              const errJson = await res.json();
+              if (errJson.detail) errMsg = errJson.detail;
+            } catch (_) {}
+            alert(errMsg);
+            return;
+          }
+
+          // 成功后刷新当前目录
+          await res.json();
+          await loadFilesFromApi(currentPath);
+        } catch (err) {
+          console.error(err);
+          alert('创建文件夹时出现错误（可能是网络或后端问题）');
+        }
+      });
+    }
+
+    // 上传文件
+    if (btnUpload && fmUploadInput) {
+      // 点击按钮 -> 打开文件选择器
+      btnUpload.addEventListener('click', () => {
+        fmUploadInput.value = ''; // 清空上次选择
+        fmUploadInput.click();
+      });
+
+      // 选完文件 -> 循环上传
+      fmUploadInput.addEventListener('change', async () => {
+        const files = Array.from(fmUploadInput.files || []);
+        if (!files.length) return;
+
+        for (const file of files) {
+          const formData = new FormData();
+          formData.append('file', file);
+          formData.append('path', currentPath === '.' ? '' : currentPath);
+
+          try {
+            const res = await fetch(`${API_FILES}/upload`, {
+              method: 'POST',
+              body: formData,
+            });
+
+            if (!res.ok) {
+              let errMsg = `上传失败：${res.status}`;
+              try {
+                const errJson = await res.json();
+                if (errJson.detail) errMsg = errJson.detail;
+              } catch (_) {}
+              alert(`上传 ${file.name} 失败：${errMsg}`);
+            }
+          } catch (err) {
+            console.error(err);
+            alert(`上传 ${file.name} 时出现错误`);
+          }
+        }
+
+        // 所有文件上传完，再刷新当前目录
+        await loadFilesFromApi(currentPath);
+      });
+    }
 
     // Initial paint
     window.addEventListener('DOMContentLoaded', () => {
