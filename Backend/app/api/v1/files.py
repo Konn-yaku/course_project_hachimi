@@ -5,6 +5,7 @@ from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query, Depends, UploadFile, File, Form
 
 from pydantic import BaseModel
+import shutil
 
 from app.core.config import settings
 from app.models.file import DirectoryListing, FileItem
@@ -16,6 +17,9 @@ router = APIRouter()
 class MkdirRequest(BaseModel):
     path: str = "."  # 将在新文件夹创建在哪个相对路径下
     folder_name: str  # 新文件夹的名称
+
+class DeleteRequest(BaseModel):
+    path: str  # 要删除的文件或文件夹的相对路径
 
 
 def get_real_path(user_path: str) -> Path:
@@ -167,6 +171,45 @@ async def upload_files(
     return {
         "message": "上传处理完成",
         "details": uploaded_details
+    }
+
+
+@router.delete("/delete")
+async def delete_item(
+        request: DeleteRequest
+):
+    """
+    删除指定的文件或文件夹。
+    如果是文件夹，将递归删除其所有内容。
+    """
+    try:
+        # 1. 获取真实路径 (这会自动检查路径越界和是否存在)
+        target_path = get_real_path(request.path)
+    except HTTPException as e:
+        raise e
+
+    # 2. 安全检查：禁止删除根目录本身
+    # 我们比较一下 target_path 和 MEDIA_ROOT_PATH
+    if target_path == settings.MEDIA_ROOT_PATH.resolve():
+        raise HTTPException(status_code=400, detail="禁止删除根目录")
+
+    try:
+        # 3. 执行删除
+        if target_path.is_file():
+            # 如果是文件，直接删除
+            os.remove(target_path)
+        elif target_path.is_dir():
+            # 如果是文件夹，使用 shutil.rmtree 递归删除 (连同里面的东西一起删)
+            shutil.rmtree(target_path)
+
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="没有权限删除该项目")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"删除失败: {e}")
+
+    return {
+        "message": "删除成功",
+        "deleted_path": request.path
     }
 
 
