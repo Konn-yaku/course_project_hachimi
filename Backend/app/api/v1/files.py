@@ -1,11 +1,12 @@
 # app/api/v1/files.py
 import os
+import shutil
 from pathlib import Path
+from typing import Literal
 from datetime import datetime
 from fastapi import APIRouter, HTTPException, Query, Depends, UploadFile, File, Form
 
 from pydantic import BaseModel
-import shutil
 
 from app.core.config import settings
 from app.models.file import DirectoryListing, FileItem
@@ -19,7 +20,17 @@ class MkdirRequest(BaseModel):
     folder_name: str  # 新文件夹的名称
 
 class DeleteRequest(BaseModel):
-    path: str  # 要删除的文件或文件夹的相对路径
+    path: str           # 当前目录（相对 MEDIA_ROOT_PATH），比如 '.' 或 'Anime/Frieren'
+    name: str           # 要删除的文件/文件夹名
+    is_dir: bool = False
+
+
+class MoveCopyRequest(BaseModel):
+    src_path: str       # 源目录，相对路径
+    dst_path: str       # 目标目录，相对路径
+    name: str           # 文件/文件夹名
+    is_dir: bool = False
+    mode: Literal["copy", "cut"] = "copy"   # copy = 复制, cut = 剪切
 
 
 def get_real_path(user_path: str) -> Path:
@@ -174,45 +185,6 @@ async def upload_files(
     }
 
 
-@router.delete("/delete")
-async def delete_item(
-        request: DeleteRequest
-):
-    """
-    删除指定的文件或文件夹。
-    如果是文件夹，将递归删除其所有内容。
-    """
-    try:
-        # 1. 获取真实路径 (这会自动检查路径越界和是否存在)
-        target_path = get_real_path(request.path)
-    except HTTPException as e:
-        raise e
-
-    # 2. 安全检查：禁止删除根目录本身
-    # 我们比较一下 target_path 和 MEDIA_ROOT_PATH
-    if target_path == settings.MEDIA_ROOT_PATH.resolve():
-        raise HTTPException(status_code=400, detail="禁止删除根目录")
-
-    try:
-        # 3. 执行删除
-        if target_path.is_file():
-            # 如果是文件，直接删除
-            os.remove(target_path)
-        elif target_path.is_dir():
-            # 如果是文件夹，使用 shutil.rmtree 递归删除 (连同里面的东西一起删)
-            shutil.rmtree(target_path)
-
-    except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限删除该项目")
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"删除失败: {e}")
-
-    return {
-        "message": "删除成功",
-        "deleted_path": request.path
-    }
-
-
 @router.post("/mkdir")
 async def create_directory(
     request: MkdirRequest
@@ -263,77 +235,92 @@ async def create_directory(
         "new_folder_path": f"{request.path}/{request.folder_name}"
     }
 
-@router.post("/mkdir")
-async def create_folder(request: MkdirRequest):
+@router.post("/delete")
+async def delete_entry(req: DeleteRequest):
     """
-    在指定 path 下创建一个子文件夹 folder_name
+    删除指定目录下的文件或文件夹
     """
-    base_root: Path = settings.MEDIA_ROOT_PATH
+    base_root: Path = settings.MEDIA_ROOT_PATH.resolve()
 
-    # 规范化 path，例如 ".", "", "/Anime/" -> "Anime"
-    rel_path = (request.path or "").strip().strip("/")
-    target_dir = base_root / rel_path if rel_path else base_root
+    # 规范化路径
+    rel = (req.path or ".").strip().strip("/")
+    real_dir = (base_root / rel).resolve()
 
-    # 确保目标路径存在
-    if not target_dir.exists():
-        raise HTTPException(status_code=400, detail="目标路径不存在")
+    # 安全检查：必须在 MEDIA_ROOT_PATH 之内
+    if base_root not in real_dir.parents and real_dir != base_root:
+        raise HTTPException(status_code=400, detail="非法路径")
 
-    new_folder_path = target_dir / request.folder_name
+    target = real_dir / req.name
 
-    # 避免同名
-    if new_folder_path.exists():
-        raise HTTPException(
-            status_code=400,
-            detail="该名称的文件夹或文件已存在"
-        )
+    if not target.exists():
+        raise HTTPException(status_code=404, detail="目标不存在")
+
+    # 类型检查
+    if req.is_dir and not target.is_dir():
+        raise HTTPException(status_code=400, detail="目标不是文件夹")
+    if not req.is_dir and not target.is_file():
+        raise HTTPException(status_code=400, detail="目标不是文件")
 
     try:
-        new_folder_path.mkdir(parents=False, exist_ok=False)
+        if target.is_dir():
+            shutil.rmtree(target)
+        else:
+            target.unlink()
     except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限在此位置创建文件夹")
+        raise HTTPException(status_code=403, detail="没有权限删除")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"创建文件夹时出错: {e}")
+        raise HTTPException(status_code=500, detail=f"删除失败: {e}")
 
-    # 返回相对路径，方便前端用
-    rel_new = str((new_folder_path.relative_to(base_root)).as_posix())
+    return {"message": "删除成功"}
 
-    return {
-        "message": "文件夹创建成功",
-        "new_folder_path": rel_new,
-    }
+@router.post("/move_copy")
+async def move_or_copy(req: MoveCopyRequest):
+    """
+    在目录之间复制/移动文件或文件夹
+    """
+    base_root: Path = settings.MEDIA_ROOT_PATH.resolve()
 
-@router.post("/upload")
-async def upload_file(
-    path: str = Form(""),              # 目标目录，相对 MEDIA_ROOT_PATH
-    file: UploadFile = File(...),      # 要上传的文件
-):
-    base_root: Path = settings.MEDIA_ROOT_PATH
-
-    rel_path = (path or "").strip().strip("/")
-    target_dir = base_root / rel_path if rel_path else base_root
-
-    if not target_dir.exists():
-        raise HTTPException(status_code=400, detail="目标路径不存在")
-
-    dest_path = target_dir / file.filename
+    def resolve_sub(path_str: str) -> Path:
+        rel = (path_str or ".").strip().strip("/")
+        p = (base_root / rel).resolve()
+        if base_root not in p.parents and p != base_root:
+            raise HTTPException(status_code=400, detail="非法路径")
+        return p
 
     try:
-        # 把上传内容写入磁盘
-        with dest_path.open("wb") as f:
-            while True:
-                chunk = await file.read(1024 * 1024)  # 1MB 一块
-                if not chunk:
-                    break
-                f.write(chunk)
-    except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限写入文件")
+        src_dir = resolve_sub(req.src_path)
+        dst_dir = resolve_sub(req.dst_path)
+    except HTTPException:
+        raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"保存文件失败: {e}")
-    finally:
-        await file.close()
+        raise HTTPException(status_code=400, detail=f"路径错误: {e}")
 
-    rel_saved = str(dest_path.relative_to(base_root).as_posix())
-    return {
-        "message": "上传成功",
-        "file_path": rel_saved,
-    }
+    src = src_dir / req.name
+    dst = dst_dir / req.name
+
+    if not src.exists():
+        raise HTTPException(status_code=404, detail="源文件不存在")
+
+    # 类型检查
+    if req.is_dir and not src.is_dir():
+        raise HTTPException(status_code=400, detail="源不是文件夹")
+    if not req.is_dir and not src.is_file():
+        raise HTTPException(status_code=400, detail="源不是文件")
+
+    if dst.exists():
+        raise HTTPException(status_code=400, detail="目标已存在（暂不覆盖）")
+
+    try:
+        if req.mode == "copy":
+            if src.is_dir():
+                shutil.copytree(src, dst)
+            else:
+                shutil.copy2(src, dst)
+        else:  # cut -> move
+            shutil.move(str(src), str(dst))
+    except PermissionError:
+        raise HTTPException(status_code=403, detail="没有权限执行复制/移动")
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"复制/移动失败: {e}")
+
+    return {"message": "操作成功"}

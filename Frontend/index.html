@@ -89,15 +89,6 @@
 
     .nav svg{ width: 18px; height: 18px; }
 
-    /* Login card pinned to bottom-left */
-    .login-card{
-      background: var(--panel);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 14px;
-      box-shadow: var(--shadow);
-    }
-    .login-card h3{ margin: 0 0 10px 0; font-size: 14px; }
     .field{ display: grid; gap: 8px; margin-bottom: 10px; }
     .field label{ font-size: 12px; color: var(--ink-dim); }
     .field input{ padding: 10px 12px; border:1px solid var(--border); border-radius: 10px; outline: none; }
@@ -192,6 +183,16 @@
     .thumb-square{ aspect-ratio: 1/1; width: 100%; border-radius: 10px; overflow: hidden; background: linear-gradient(180deg, var(--brand-100), #eef8f3); position: relative; }
     .thumb-square img{ position:absolute; inset:0; width:100%; height:100%; object-fit: cover; }
 
+    .square-grid .thumb-square{
+    background: #e2f3ea;
+    border-radius: 18px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;   /* ⭐ 让鼠标变小手 */
+  }
+
     /* ============================
        File Manager (Explorer-like)
        ============================ */
@@ -233,8 +234,127 @@
     #view-files.panel{ padding-top: 10px; margin-top: 0; }
     body[data-view='files'] .main { gap: 6px; }
     body[data-view='files'] .toolbar { margin-bottom: 0; padding-block: 2px; }
+        /* ---------- File Manager 右键菜单 ---------- */
+    /* 右键菜单 */
+    .fm-context-menu{
+      position: fixed;          /* 必须是 fixed，才能用屏幕坐标 */
+      z-index: 9999;
+      background: #fff;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      box-shadow: 0 10px 30px rgba(15,23,42,0.18);
+      min-width: 160px;
+      padding: 4px 0;
+      display: none;            /* 初始不显示 */
+      font-size: 14px;
+    }
+
+    .fm-context-menu.open{
+      display: block;
+    }
+
+    .fm-context-menu ul{
+      list-style: none;         /* 去掉你截图里的小圆点 */
+      margin: 0;
+      padding: 0;
+    }
+
+    .fm-context-menu li{
+      padding: 6px 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+
+    .fm-context-menu li:hover{
+      background: var(--brand-50);
+    }
+
+    .fm-context-menu li.disabled{
+      color: #94a3b8;
+      cursor: default;
+    }
+
+    .fm-context-menu li.disabled:hover{
+      background: transparent;
+    }
+
+    .fm-context-menu li.divider{
+      height: 1px;
+      margin: 4px 0;
+      padding: 0;
+      background: var(--border);
+      cursor: default;
+    }
+
+    /* ============================
+   Photo Preview Overlay
+   ============================ */
+    .photo-overlay{
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.7);
+      display: none;               /* 默认隐藏 */
+      align-items: center;
+      justify-content: center;
+      z-index: 999;                /* 压过其他内容 */
+    }
+
+    .photo-overlay.active{
+      display: flex;               /* 显示时用 flex 居中 */
+    }
+
+    .photo-overlay-content{
+      /* 只负责包一层壳，不强行限制宽高比例 */
+      border-radius: 20px;
+      background: #000;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.6);
+      position: relative;
+      padding: 0;
+      /* 不再用 max-width / max-height 去压缩容器本身 */
+      overflow: visible;
+    }
+
+    .photo-overlay-content img{
+      display: block;
+      /* 按原始比例渲染 */
+      width: auto;
+      height: auto;
+      /* 但是最大不能超过视口大小 */
+      max-width: 90vw;
+      max-height: 90vh;
+      /* 不需要再 object-fit 了，按自然比例即可 */
+    }
+
+
+    .photo-overlay-close{
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      border: none;
+      border-radius: 999px;
+      padding: 6px 12px;
+      cursor: pointer;
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      font-size: 14px;
+    }
+
   </style>
 </head>
+
+<!-- File Manager 右键菜单 -->
+<div id="fmContextMenu" class="fm-context-menu">
+  <ul>
+    <li data-action="open">Open</li>
+    <li class="divider"></li>
+    <li data-action="copy">Copy</li>
+    <li data-action="cut">Cut</li>
+    <li data-action="paste">Paste</li>
+    <li class="divider"></li>
+    <li data-action="delete">Delete</li>
+  </ul>
+</div>
+
 <body>
   <div class="app">
     <!-- =============================
@@ -242,10 +362,11 @@
          ============================= -->
     <aside class="sidebar">
       <div class="brand">
-        <div class="logo">GD</div>
+        <div class="logo">HCM</div>
         <div>
-          <h1>User name</h1>
-          <span>User details</span>
+          <h1>LAN based NAS
+          </h1>
+          <span>Team Hachimi</span>
         </div>
       </div>
 
@@ -271,13 +392,6 @@
           <span>File Manager</span>
         </button>
       </nav>
-
-      <div class="login-card">
-        <h3>User Login</h3>
-        <div class="field"><label for="email">Email</label><input id="email" placeholder="you@domain.com" /></div>
-        <div class="field"><label for="pwd">Password</label><input id="pwd" type="password" placeholder="••••••••" /></div>
-        <button class="btn" id="loginBtn">Sign in</button>
-      </div>
     </aside>
 
     <!-- =============================
@@ -310,15 +424,26 @@
         </div>
       </section>
 
+      <!-- Photo Preview Overlay -->
+      <div id="photoOverlay" class="photo-overlay">
+        <div class="photo-overlay-content">
+          <button class="photo-overlay-close" aria-label="Close preview">✕</button>
+          <img id="photoOverlayImg" src="" alt="Preview" />
+        </div>
+      </div>
+
       <!-- Files View (Explorer-like) -->
       <section id="view-files" class="panel" hidden>
         <div class="fm-toolbar">
-          <div class="fm-path" id="fmPath">Media</div>
-            <div class="fm-actions">
-              <button class="btn" id="btnNewFolder">New Folder</button>
-              <button class="btn" id="btnUpload">Upload</button>
-              <input type="file" id="fmUploadInput" multiple style="display:none" />
-            </div>
+          <button class="btn btn-back" id="fmBackBtn">← Back</button>
+          <div class="fm-path">
+            <span id="fmPath">Media</span>
+          </div>
+          <div class="fm-actions">
+            <button class="btn" id="btnNewFolder">New Folder</button>
+            <button class="btn" id="btnUpload">Upload</button>
+            <input type="file" id="fmUploadInput" multiple style="display:none" />
+          </div>
         </div>
         <div class="fm-table" id="fmTable">
           <div class="fm-row header">
@@ -340,7 +465,9 @@
     // ============= File Manager 状态 =============
     let currentPath = '.';       // 当前浏览的路径，相对 my_media_folder
     let filesLoadedOnce = false; // 是否已经加载过（避免每次切换都重新拉）
+    let currentFileItems = [];   // ⭐ 当前目录的完整文件列表，用于搜索过滤
     const fmPathEl = document.getElementById('fmPath');
+    
     
     //后端地址（开发阶段）
     const API_BASE = 'http://localhost:8000/api/v1';
@@ -352,9 +479,27 @@
     const nav = document.getElementById('nav');
     const title = document.getElementById('viewTitle');
 
+    // Photos 预览相关 DOM
+    const photosGrid = document.getElementById('photosGrid');
+    const photoOverlay = document.getElementById('photoOverlay');
+    const photoOverlayImg = document.getElementById('photoOverlayImg');
+    const photoOverlayClose = document.querySelector('.photo-overlay-close');
+
+    const animeGrid = document.getElementById('animeGrid');    // ⭐ 新增
+    const moviesGrid = document.getElementById('moviesGrid');  // ⭐ 新增
+
     const btnNewFolder = document.getElementById('btnNewFolder');
     const btnUpload = document.getElementById('btnUpload');
     const fmUploadInput = document.getElementById('fmUploadInput');
+
+    // 右键相关
+    const fmPanel = document.getElementById('view-files');   // 整个 File Manager 面板
+    const fmTable = document.getElementById('fmTable');
+    const fmMenu  = document.getElementById('fmContextMenu');
+
+    // 当前右键目标 & 剪切板
+    let fmContextTarget = null;  // { type: 'entry' | 'blank', name, isDir, path }
+    let fmClipboard = null;      // { mode: 'copy' | 'cut', path, name, isDir }
 
     const views = {
       anime: document.getElementById('view-anime'),
@@ -378,12 +523,14 @@
     // ================ Photos ================
     let photoSeed = [];
 
-    function renderAnime(){
+    function renderAnime(list) {
       const grid = document.getElementById('animeGrid');
       if (!grid) return;
 
-      grid.innerHTML = animeSeed.map(item => `
-        <article class="card">
+      const data = list || animeSeed;   // ⭐ 没传就用全量 animeSeed
+
+      grid.innerHTML = data.map(item => `
+        <article class="card" data-folder="Anime/${item.title}">
           <div class="thumb-rect">
             ${item.poster
               ? `<img src="${item.poster}" alt="${item.title} poster"/>`
@@ -392,7 +539,6 @@
           <div class="meta">${item.title}</div>
         </article>
       `).join('');
-      
     }
         // 从 NAS 后端加载 Anime 列表
     async function loadAnimeFromApi() {
@@ -429,12 +575,14 @@
       }
     }
 
-    function renderMovies() {
+    function renderMovies(list) {
       const grid = document.getElementById('moviesGrid'); // 注意是 moviesGrid
       if (!grid) return;
 
-      grid.innerHTML = movieSeed.map(item => `
-        <article class="card">
+      const data = list || movieSeed;
+
+      grid.innerHTML = data.map(item => `
+        <article class="card" data-folder="Movies/${item.title}">
           <div class="thumb-rect">
             ${item.poster
               ? `<img src="${item.poster}" alt="${item.title} poster" />`
@@ -476,19 +624,19 @@
       }
     }
 
-    function renderPhotos() {
+    function renderPhotos(list) {
       const grid = document.getElementById('photosGrid');
       if (!grid) return;
 
-      grid.innerHTML = photoSeed.map(item => `
-        <article class="card">
-          <div class="thumb-rect">
-            <img src="${item.src}" alt="${item.title}" />
-          </div>
-          <div class="meta">${item.title}</div>
-        </article>
-      `).join('');
+      const data = list || photoSeed;   // ⭐ 有过滤结果就用过滤结果，没有就用全量
+
+    grid.innerHTML = data.map(item => `
+      <div class="thumb-square">
+        <img src="${item.src}" alt="${item.title}" />
+      </div>
+    `).join('');
     }
+
 
     async function loadPhotosFromApi() {
       try {
@@ -518,20 +666,123 @@
         }));
 
         renderPhotos();
-      } catch (err) {
-        console.error(err);
-        alert('从 NAS 加载 Photos 失败，暂时用本地占位图片');
+        } catch (err) {
+          console.error(err);
+          alert('从 NAS 加载 Photos 失败，暂时用本地占位图片');
 
-        if (photoSeed.length === 0) {
-          photoSeed = [
-            { title: 'Local Photo 1', src: 'Photo/test photo (1).jpg' },
-            { title: 'Local Photo 2', src: 'Photo/test photo (2).jpg' },
-          ];
+          if (photoSeed.length === 0) {
+            photoSeed = [
+              { title: 'Local Photo 1', src: 'Photo/test photo (1).jpg' },
+              { title: 'Local Photo 2', src: 'Photo/test photo (2).jpg' },
+            ];
+          }
+          renderPhotos();
         }
-        renderPhotos();
       }
+
+      // ============================
+      // Photos 预览逻辑
+      // ============================
+      if (photosGrid && photoOverlay && photoOverlayImg) {
+        // 点击缩略图 -> 打开预览
+        photosGrid.addEventListener('click', (e) => {
+          // 先找到外层方块
+          const cell = e.target.closest('.thumb-square');
+          if (!cell) return;
+
+          // 再从里面取图片
+          const img = cell.querySelector('img');
+          if (!img) return;
+
+          openPhotoPreview(img.src, img.alt || '');
+        });
+
+        // 点击遮罩空白区域关闭
+        photoOverlay.addEventListener('click', (e) => {
+          if (e.target === photoOverlay || e.target.closest('.photo-overlay-close')) {
+            photoOverlay.classList.remove('active');
+            photoOverlayImg.src = '';
+          }
+        });
+
+        // ESC 键关闭
+        document.addEventListener('keydown', (e) => {
+          if (e.key === 'Escape' && photoOverlay.classList.contains('active')) {
+            photoOverlay.classList.remove('active');
+            photoOverlayImg.src = '';
+          }
+        });
+      }
+
+    // ============================
+    // Anime / Movies 点击 -> 跳到对应文件夹
+    // ============================
+    if (animeGrid) {
+      animeGrid.addEventListener('click', (e) => {
+        const card = e.target.closest('.card');
+        if (!card) return;
+
+        const folder = card.dataset.folder;  // 比如 "Anime/Frieren"
+        if (!folder) return;
+
+        jumpToFileManager(folder);
+      });
     }
 
+    if (moviesGrid) {
+      moviesGrid.addEventListener('click', (e) => {
+        const card = e.target.closest('.card');
+        if (!card) return;
+
+        const folder = card.dataset.folder;  // 比如 "Movies/Inception"
+        if (!folder) return;
+
+        jumpToFileManager(folder);
+      });
+    }
+
+
+    // 把后端返回的时间字符串格式化一下，只保留到秒
+    function formatModified(value) {
+      if (!value) return '';
+
+      // FastAPI 默认是 "2025-11-18T15:06:13.604660" 这种
+      const str = String(value);
+      const [datePart, timePartRaw] = str.split('T');
+      if (!timePartRaw) return str;
+
+      const timePart = timePartRaw.slice(0, 8); // HH:MM:SS
+
+      // 如果你真的只想显示时间，可以 return timePart;
+      // 现在我给你日期 + 时间，看起来更正常：
+      return `${datePart} ${timePart}`;
+    }
+
+    // 把字节数格式化成人类可读的形式
+    function formatSize(bytes, isDir) {
+      if (bytes == null) return '—';
+
+      // 文件夹这一步如果要算总大小就得后端递归，非常吃性能，
+      // 先统一显示 "—"，文件显示真实大小
+      if (isDir) return '—';
+
+      const b = Number(bytes);
+      if (!isFinite(b) || b < 0) return '—';
+      if (b === 0) return '0 B';
+
+      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+      let size = b;
+      let unit = 0;
+      while (size >= 1024 && unit < units.length - 1) {
+        size /= 1024;
+        unit++;
+      }
+
+      // 小于 10 的保留 1 位小数，大于 10 取整
+      const fixed = size >= 10 || unit === 0 ? size.toFixed(0) : size.toFixed(1);
+      return `${fixed} ${units[unit]}`;
+    }
+    
     function renderFiles(items) {
       const table = document.getElementById('fileTableBody');
       if (!table) return;
@@ -541,17 +792,52 @@
       if (!items || items.length === 0) {
         table.innerHTML = `
           <div class="fm-row">
-            <div class="fm-cell" colspan="5" style="opacity:0.7">This folder is empty.</div>
+            <div class="fm-cell" colspan="5" style="opacity:0.7">MT</div>
           </div>
         `;
         return;
       }
 
+      const fileTableBody = document.getElementById('fileTableBody');
+      if (fileTableBody) {
+        fileTableBody.addEventListener('dblclick', (e) => {
+          const row = e.target.closest('.fm-row');
+          if (!row || !row.dataset.name) return;
+
+          const name = row.dataset.name;
+          const isDir = row.dataset.isDir === 'true';
+          const relPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+
+          if (isDir) {
+            // 双击文件夹 = 进入
+            loadFilesFromApi(relPath);
+          } else {
+            // 双击文件 = 打开（图片走预览，其它新标签）
+            const url = buildStaticMediaUrl(relPath);
+
+            if (isImageFile(name)) {
+              openPhotoPreview(url, name);
+            } else {
+              window.open(url, '_blank');
+            }
+          }
+        });
+      }
+
+      function openPhotoPreview(url, altText = '') {
+        if (!photoOverlay || !photoOverlayImg) return;
+        photoOverlayImg.src = url;
+        photoOverlayImg.alt = altText || '';
+        photoOverlay.classList.add('active');
+      }
+
+
       const rowsHtml = items.map(it => {
         const icon = it.is_dir ? '📁' : '📄';
         const type = it.is_dir ? 'Folder' : (it.extension || 'File');
-        const modified = it.modified || '';
-        const size = it.size_readable || '—';
+
+        const modified = formatModified(it.modified);
+        const size     = formatSize(it.size, it.is_dir);
 
         return `
           <div class="fm-row" 
@@ -575,6 +861,97 @@
       }
     }
 
+    function isImageFile(name) {
+      const lower = String(name || '').toLowerCase();
+      return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg']
+        .some(ext => lower.endsWith(ext));
+    }
+
+    function buildStaticMediaUrl(relPath) {
+      const safe = String(relPath || '')
+        .split('/')
+        .map(encodeURIComponent)
+        .join('/');
+      return `${API_ROOT}/static_media/${safe}`;
+    }
+
+    // 把相对路径变成 /static_media 的 URL
+    function buildStaticMediaUrl(relPath) {
+      // relPath 例如: "Anime/Frieren/xxx.mkv" 或 "test.txt"
+      const safe = (relPath || '')
+        .split('/')
+        .map(encodeURIComponent)   // 每一段分别编码，防止空格/中文炸掉
+        .join('/');
+
+      return `${API_ROOT}/static_media/${safe}`;
+    }
+
+
+    const searchBox = document.getElementById('searchBox');
+    const searchBtn = document.getElementById('addBtn');
+
+    function applySearch() {
+      if (!searchBox) return;
+      const raw = searchBox.value || '';
+      const q = raw.trim().toLowerCase();
+
+      // 当前视图：anime / movies / photos / files
+      const view = document.body.dataset.view || 'anime';
+
+      // 如果搜索框是空的 -> 恢复原始视图
+      if (!q) {
+        if (view === 'anime') {
+          renderAnime();                 // 用 animeSeed
+        } else if (view === 'movies') {
+          renderMovies();
+        } else if (view === 'photos') {
+          renderPhotos();
+        } else if (view === 'files') {
+          renderFiles(currentFileItems); // 用完整文件列表
+        }
+        return;
+      }
+
+      // 各个视图的过滤逻辑（大小写不敏感）
+      if (view === 'anime') {
+        const filtered = animeSeed.filter(item =>
+          item.title.toLowerCase().includes(q)
+        );
+        renderAnime(filtered);
+      } else if (view === 'movies') {
+        const filtered = movieSeed.filter(item =>
+          item.title.toLowerCase().includes(q)
+        );
+        renderMovies(filtered);
+      } else if (view === 'photos') {
+        const filtered = photoSeed.filter(item =>
+          item.title.toLowerCase().includes(q)
+        );
+        renderPhotos(filtered);
+      } else if (view === 'files') {
+        const filtered = currentFileItems.filter(it => {
+          const name = (it.name || '').toLowerCase();
+          const type = it.is_dir
+            ? 'folder'
+            : (it.extension || '').toLowerCase();
+
+          // 你也可以只按 name 过滤，这里顺便把类型也算上
+          return name.includes(q) || type.includes(q);
+        });
+        renderFiles(filtered);
+      }
+    }
+
+    // 绑定搜索按钮和回车键
+    if (searchBtn) {
+      searchBtn.addEventListener('click', applySearch);
+    }
+    if (searchBox) {
+      searchBox.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') applySearch();
+      });
+    }
+
     async function loadFilesFromApi(path = '.') {
       try {
         currentPath = path;
@@ -589,9 +966,9 @@
         }
 
         const data = await res.json();
-        // data.items 是后端返回的 FileItem[]
-        const items = data.items || data.files || []; // 兼容一下字段名
+        const items = data.items || data.files || [];
 
+        currentFileItems = items;   // ⭐ 存一份当前目录完整列表
         renderFiles(items);
         filesLoadedOnce = true;
       } catch (err) {
@@ -599,6 +976,20 @@
         alert('从 NAS 加载文件列表失败');
       }
     }
+
+    function jumpToFileManager(targetPath) {
+      // 1. 先切到 File Manager 视图（复用左侧导航的逻辑）
+      const filesBtn = nav.querySelector('button[data-target="files"]');
+      if (filesBtn) {
+        filesBtn.click();   // 这会触发原本的视图切换逻辑
+      }
+
+      // 2. 然后加载目标路径
+      //    nav 的点击里会在第一次进入 File Manager 时自动加载一次根目录，
+      //    这里再加载我们真正想要的目录即可。
+      loadFilesFromApi(targetPath);
+    }
+
 
     // 回退到上一级目录
     function goUpOneLevel() {
@@ -680,6 +1071,17 @@
         loadFilesFromApi('.');   // 加载根目录
         filesLoadedOnce = true;  // 防止重复加载
       }
+
+      // 6. 切换视图时清空搜索内容
+      if (searchBox) searchBox.value = '';
+
+      // 7.（可选）切到某个视图的时候，用完整数据重渲染一遍
+      if (target === 'anime') renderAnime();
+      if (target === 'movies') renderMovies();
+      if (target === 'photos') renderPhotos();
+      if (target === 'files' && currentFileItems.length) {
+        renderFiles(currentFileItems);
+      }
     });
 
     // 新建文件夹
@@ -692,8 +1094,7 @@
         if (!folderName) return;
 
         const payload = {
-          // 后端这边我们约定：根目录用空字符串 ""
-          path: currentPath === '.' ? '' : currentPath,
+          path: currentPath || '.',      // 根目录就是 '.'
           folder_name: folderName,
         };
 
@@ -734,40 +1135,52 @@
         fmUploadInput.click();
       });
 
-      // 选完文件 -> 循环上传
+      // 选完文件 -> 一次性把所有文件作为 "files" 传上去
       fmUploadInput.addEventListener('change', async () => {
         const files = Array.from(fmUploadInput.files || []);
         if (!files.length) return;
 
+        const formData = new FormData();
+
+        // 和后端对齐：字段名叫 "files"
         for (const file of files) {
-          const formData = new FormData();
-          formData.append('file', file);
-          formData.append('path', currentPath === '.' ? '' : currentPath);
-
-          try {
-            const res = await fetch(`${API_FILES}/upload`, {
-              method: 'POST',
-              body: formData,
-            });
-
-            if (!res.ok) {
-              let errMsg = `上传失败：${res.status}`;
-              try {
-                const errJson = await res.json();
-                if (errJson.detail) errMsg = errJson.detail;
-              } catch (_) {}
-              alert(`上传 ${file.name} 失败：${errMsg}`);
-            }
-          } catch (err) {
-            console.error(err);
-            alert(`上传 ${file.name} 时出现错误`);
-          }
+          formData.append('files', file);
         }
 
-        // 所有文件上传完，再刷新当前目录
+        // 路径字段叫 path，根目录用 "."
+        formData.append('path', currentPath || '.');
+
+        try {
+          const res = await fetch(`${API_FILES}/upload`, {
+            method: 'POST',
+            body: formData,
+          });
+
+          if (!res.ok) {
+            let errMsg = `上传失败：${res.status}`;
+            try {
+              const errJson = await res.json();
+              console.log('upload error json:', errJson);
+              if (Array.isArray(errJson.detail)) {
+                errMsg = errJson.detail.map(d => `${d.loc?.join('.')}: ${d.msg}`).join('; ');
+              } else if (typeof errJson.detail === 'string') {
+                errMsg = errJson.detail;
+              }
+            } catch (_) {}
+            alert(`上传失败：${errMsg}`);
+          } else {
+            await res.json(); // 用不到内容就丢掉没关系
+          }
+        } catch (err) {
+          console.error(err);
+          alert(`上传文件时出现错误`);
+        }
+
+        // 所有文件处理完，再刷新当前目录
         await loadFilesFromApi(currentPath);
       });
     }
+
 
     // Initial paint
     window.addEventListener('DOMContentLoaded', () => {
@@ -776,31 +1189,249 @@
       loadPhotosFromApi();  // ✅ 用 NAS 真数据
     });
 
-    // default view state marker
-    document.body.dataset.view = 'anime';
+    // =========================
+    // File Manager 右键菜单逻辑
+    // =========================
 
-    // Pretend-login
-    document.getElementById('loginBtn').addEventListener('click', () => {
-      alert('Mock login: wire this up to your auth later.');
+    function setMenuItemDisabled(action, disabled) {
+      if (!fmMenu) return;
+      const li = fmMenu.querySelector(`li[data-action="${action}"]`);
+      if (!li) return;
+      if (disabled) li.classList.add('disabled');
+      else li.classList.remove('disabled');
+    }
+
+    function updateContextMenuState() {
+      const hasEntry = fmContextTarget && fmContextTarget.type === 'entry';
+      const hasClipboard = !!fmClipboard;
+
+      setMenuItemDisabled('open',   !hasEntry);
+      setMenuItemDisabled('copy',   !hasEntry);
+      setMenuItemDisabled('cut',    !hasEntry);
+      setMenuItemDisabled('delete', !hasEntry);
+      setMenuItemDisabled('paste',  !hasClipboard);
+    }
+
+    function showContextMenu(x, y, targetInfo) {
+      if (!fmMenu) return;
+      fmContextTarget = targetInfo;
+      updateContextMenuState();
+
+      fmMenu.style.display = 'block';
+      fmMenu.style.left = x + 'px';
+      fmMenu.style.top  = y + 'px';
+
+      // 防止溢出屏幕
+      const rect = fmMenu.getBoundingClientRect();
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      if (rect.right > vw) {
+        fmMenu.style.left = (vw - rect.width - 8) + 'px';
+      }
+      if (rect.bottom > vh) {
+        fmMenu.style.top = (vh - rect.height - 8) + 'px';
+      }
+    }
+
+    function hideContextMenu() {
+      if (fmMenu) fmMenu.style.display = 'none';
+    }
+
+    // 在整个 File Manager 面板上监听右键
+    if (fmPanel) {
+      fmPanel.addEventListener('contextmenu', (e) => {
+        if (fmMenu && fmMenu.contains(e.target)) return;
+        e.preventDefault();
+
+        let targetInfo;
+        const isInTable = fmTable && fmTable.contains(e.target);
+        const row = isInTable ? e.target.closest('.fm-row') : null;
+
+        if (row && row.dataset.name) {
+          const name = row.dataset.name;
+          const isDir = row.dataset.isDir === 'true';
+          const fullPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+
+          targetInfo = {
+            type: 'entry',
+            name,
+            isDir,
+            path: fullPath,
+          };
+        } else {
+          targetInfo = {
+            type: 'blank',
+            path: currentPath || '.',
+          };
+        }
+
+        showContextMenu(e.clientX, e.clientY, targetInfo);
+      });
+    }
+
+    // 点击别处 / 滚动 / Esc 关闭菜单
+    document.addEventListener('click', (e) => {
+      if (!fmMenu) return;
+      if (!fmMenu.contains(e.target)) hideContextMenu();
+    });
+    document.addEventListener('scroll', hideContextMenu, true);
+    window.addEventListener('resize', hideContextMenu);
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') hideContextMenu();
     });
 
-    const _blobURLs = [];
-    window.addEventListener('beforeunload', () => _blobURLs.forEach(u => URL.revokeObjectURL(u)));
+    // 菜单点击分发
+    if (fmMenu) {
+      fmMenu.addEventListener('click', async (e) => {
+        const li = e.target.closest('li[data-action]');
+        if (!li || li.classList.contains('disabled')) return;
 
-    const imgPicker = document.getElementById('imgPicker');
+        const action = li.dataset.action;
+        hideContextMenu();
 
-    function addItemToCurrentView(){
-      const current = document.body.dataset.view;
-      const useLocal = confirm('Use a local image file?\nOK = pick from computer, Cancel = paste an online URL');
+        switch (action) {
+          case 'open':
+            await handleFmOpen();
+            break;
+          case 'copy':
+            handleFmCopy(false);
+            break;
+          case 'cut':
+            handleFmCopy(true);
+            break;
+          case 'paste':
+            await handleFmPaste();
+            break;
+          case 'delete':
+            await handleFmDelete();
+            break;
+        }
+      });
+    }
 
-      if(current === 'anime' || current === 'movies'){
-        if(useLocal){
-          imgPicker.multiple = false;
-          im
-        };
-    };
-    };
-    
+    // ========= 具体操作 =========
+
+    // Open：文件夹进入；文件用静态地址在新标签页打开
+    async function handleFmOpen() {
+      if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
+
+      const { name, isDir, path } = fmContextTarget;
+
+      if (isDir) {
+        const newPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+        await loadFilesFromApi(newPath);
+      } else {
+        // 计算相对路径
+        const relPath = path || (currentPath === '.' ? name : `${currentPath}/${name}`);
+        const fileUrl = buildStaticMediaUrl(relPath);
+
+        if (isImageFile(name)) {
+          // 图片：用和 Photos 一样的遮罩预览
+          openPhotoPreview(fileUrl, name);
+        } else {
+          // 其他类型：先保持用浏览器打开/下载
+          window.open(fileUrl, '_blank');
+        }
+      }
+    }
+
+
+    // Copy / Cut：填充剪贴板
+    function handleFmCopy(isCut) {
+      if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
+
+      fmClipboard = {
+        mode: isCut ? 'cut' : 'copy',
+        fromPath: currentPath || '.',
+        name: fmContextTarget.name,
+        isDir: fmContextTarget.isDir,
+      };
+
+      updateContextMenuState();
+    }
+
+    // Paste：调用后端 /move_copy
+    async function handleFmPaste() {
+      if (!fmClipboard) return;
+
+      const payload = {
+        src_path: fmClipboard.fromPath,
+        dst_path: currentPath || '.',
+        name: fmClipboard.name,
+        is_dir: fmClipboard.isDir,
+        mode: fmClipboard.mode,       // 'copy' or 'cut'
+      };
+
+      try {
+        const res = await fetch(`${API_FILES}/move_copy`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          let msg = `粘贴失败：${res.status}`;
+          try {
+            const data = await res.json();
+            if (data.detail) msg = data.detail;
+          } catch (_) {}
+          alert(msg);
+          return;
+        }
+
+        if (fmClipboard.mode === 'cut') {
+          fmClipboard = null; // 剪切成功后清空剪贴板
+        }
+
+        await loadFilesFromApi(currentPath);
+      } catch (err) {
+        console.error(err);
+        alert('粘贴时发生错误');
+      } finally {
+        updateContextMenuState();
+      }
+    }
+
+    // Delete：调用后端 /delete
+    async function handleFmDelete() {
+      if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
+
+      const { name, isDir } = fmContextTarget;
+      const text = isDir
+        ? `确定要删除文件夹 "${name}" 及其所有内容吗？`
+        : `确定要删除文件 "${name}" 吗？`;
+      if (!confirm(text)) return;
+
+      const payload = {
+        path: currentPath || '.',
+        name,
+        is_dir: isDir,
+      };
+
+      try {
+        const res = await fetch(`${API_FILES}/delete`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          let msg = `删除失败：${res.status}`;
+          try {
+            const data = await res.json();
+            if (data.detail) msg = data.detail;
+          } catch (_) {}
+          alert(msg);
+          return;
+        }
+
+        await loadFilesFromApi(currentPath);
+      } catch (err) {
+        console.error(err);
+        alert('删除时发生错误');
+      }
+    }
+
   </script>
 </body>
 </html>
