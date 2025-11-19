@@ -1,52 +1,68 @@
-# app/main.py
 import os
 from fastapi import FastAPI
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
 from app.core.config import settings
 
+# Import API routers
 from app.api.v1 import files as files_router
 from app.api.v1 import media as media_router
 
+# Initialize the FastAPI application
 app = FastAPI(title="Home Cloud API")
 
-# --- 2. 配置 CORS ---
+# Configure CORS (Cross-Origin Resource Sharing)
+# This allows the frontend (running on a different port/domain) to communicate with this backend.
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],          # 先全部放行，等稳定了再收紧
+    allow_origins=["*"],          # Allow all origins for development. Restrict this in production.
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["*"],          # Allow all HTTP methods (GET, POST, DELETE, etc.)
+    allow_headers=["*"],          # Allow all HTTP headers
 )
-# --- 3. 自动创建媒体目录 ---
-os.makedirs(settings.MEDIA_ROOT_PATH, exist_ok=True)
-print(f"媒体文件将存储在: {settings.MEDIA_ROOT_PATH.resolve()}")
 
-# --- 4. 挂载静态文件目录 ---
+# Auto-create Media Directory
+# Ensure the root directory for storing media files exists on the server.
+os.makedirs(settings.MEDIA_ROOT_PATH, exist_ok=True)
+print(f"Media files will be stored at: {settings.MEDIA_ROOT_PATH.resolve()}")
+
+# Mount Static File Directory
+# This mounts the physical media directory to a virtual URL path.
+# It allows the frontend to access images/videos via http://host:port/static_media/...
 app.mount(
     "/static_media",
     StaticFiles(directory=settings.MEDIA_ROOT_PATH),
     name="static_media"
 )
 
-# --- 5. 你的路由 ---
+# Basic Routes
+
 @app.get("/")
 async def root():
-    return {"message": "欢迎来到 Home Cloud API!"}
+    """
+    Root endpoint to check if the API is running.
+    """
+    return {"message": "Welcome to Home Cloud API!"}
 
 @app.get("/hello/{name}")
 async def say_hello(name: str):
+    """
+    A simple test endpoint that echoes back the name.
+    """
     return {"message": f"Hello {name}"}
 
-# (我们将在这里添加新的API路由)
+# Include API Routers
+
+# Register the File Manager routes
 app.include_router(
     files_router.router,
-    prefix="/api/v1/files", # 所有这个路由下的端点都会自动加上 /api/v1/files 前缀
-    tags=["Files"]          # 在 /docs 页面中进行分组
+    prefix="/api/v1/files",  # All endpoints in this router will be prefixed with /api/v1/files
+    tags=["Files"]           # Grouping label for the /docs Swagger UI
 )
 
+# Register the Media Library routes
 app.include_router(
-    media_router.router,  # <-- 2. 包含新路由
+    media_router.router,
     prefix="/api/v1/media",
-    tags=["Media Library"] # <-- 在 /docs 中显示为 "Media Library"
+    tags=["Media Library"]   # Grouping label for the /docs Swagger UI
 )

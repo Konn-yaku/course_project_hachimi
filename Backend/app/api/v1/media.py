@@ -1,25 +1,29 @@
-# app/api/v1/media.py
 import os
 from pathlib import Path
-from fastapi import APIRouter, HTTPException, Depends
+from fastapi import APIRouter, HTTPException
 
 from app.core.config import settings
 from app.models.file import MediaItem
 
 router = APIRouter()
 
-# 允许的海报/封面文件扩展名
-# 我们使用 set (集合) 是为了更快的查找
+# Allowed file extensions for posters/covers
+# Using a set allows for O(1) lookup speed
 ALLOWED_POSTER_EXTENSIONS = {".jpg", ".jpeg", ".png", ".webp"}
 
 
 def get_media_path(media_type: str) -> Path:
-    """安全地获取媒体子目录的路径"""
+    """
+    Safely retrieve the absolute path for a specific media subdirectory (e.g., 'Anime', 'Movies').
+    Ensures the directory exists and is securely located within the MEDIA_ROOT_PATH.
+    """
     media_dir = settings.MEDIA_ROOT_PATH.joinpath(media_type).resolve()
 
+    # Security check: Prevent path traversal to ensure we stay inside the media root
     if not str(media_dir).startswith(str(settings.MEDIA_ROOT_PATH.resolve())):
-        raise HTTPException(status_code=500, detail="媒体目录配置错误")
+        raise HTTPException(status_code=500, detail="Media directory configuration error")
 
+    # Automatically create the directory if it doesn't exist
     os.makedirs(media_dir, exist_ok=True)
     return media_dir
 
@@ -27,51 +31,51 @@ def get_media_path(media_type: str) -> Path:
 @router.get("/anime", response_model=list[MediaItem])
 async def get_anime_library():
     """
-    扫描 Anime 目录，查找子文件夹和海报。
-    (新逻辑：查找子文件夹中的 *任何* 图像文件)
+    Scans the 'Anime' directory to build a library of available titles.
+    Each subdirectory in 'Anime' is treated as a distinct title.
+    The API looks for any image file inside the subdirectory to serve as the poster.
     """
-    anime_dir = get_media_path("Anime")  # 获取 my_media_files/Anime 路径
+    anime_dir = get_media_path("Anime")  # Resolve path to my_media_files/Anime
     library = []
 
     try:
-        # 遍历 "Anime" 目录下的所有条目 (e.g., "Frieren", "SPYxFamily")
+        # Iterate through all entries in the "Anime" directory (e.g., "Frieren", "SPYxFamily")
         for entry in os.scandir(anime_dir):
-            # 我们只关心子文件夹
+            # We only care about directories (which represent Titles)
             if not entry.is_dir():
                 continue
 
             item_title = entry.name
             poster_url = None
 
-            # --- 这是修改后的新逻辑 ---
-            #
-            # 遍历这个子文件夹 ("Frieren") 内部的所有文件
+            # --- Image Discovery Logic ---
+            # Scan files inside this title's folder to find a valid poster image
             try:
                 for item_in_folder in os.scandir(entry.path):
-                    # 确保它是一个文件
+                    # Ensure it is a file
                     if not item_in_folder.is_file():
                         continue
 
-                    # 检查文件的扩展名
+                    # Check the file extension
                     file_ext = Path(item_in_folder.name).suffix.lower()
 
                     if file_ext in ALLOWED_POSTER_EXTENSIONS:
-                        # 找到了! 这就是我们的海报
-                        # (e.g., "Alma-chan Wants to Have a family!.webp")
+                        # Found a valid image! This will be our poster.
+                        # (e.g., "poster.webp" or "cover.jpg")
                         poster_name = item_in_folder.name
 
-                        # 构建 URL: /static_media/Anime/Frieren/poster.jpg
+                        # Construct the static URL: /static_media/Anime/Title/image.jpg
                         poster_url = f"/static_media/Anime/{item_title}/{poster_name}"
 
-                        # 找到第一个就停止，不再查找
+                        # Stop searching after finding the first valid image
                         break
 
             except Exception:
-                # 扫描子文件夹出错，跳过
+                # Skip this folder if an error occurs during scanning
                 continue
-            # --- 新逻辑结束 ---
+            # --- End Discovery Logic ---
 
-            # 如果这个子文件夹里一张图片都找不到，就跳过
+            # If no image was found in the folder, skip adding this title to the library
             if poster_url is None:
                 continue
 
@@ -81,8 +85,9 @@ async def get_anime_library():
             ))
 
     except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限读取 Anime 目录")
+        raise HTTPException(status_code=403, detail="Permission denied reading Anime directory")
 
+    # Sort the library alphabetically by title
     library.sort(key=lambda x: x.title)
     return library
 
@@ -90,14 +95,14 @@ async def get_anime_library():
 @router.get("/movies", response_model=list[MediaItem])
 async def get_movie_library():
     """
-    扫描 Movies 目录，查找子文件夹和海报。
-    (逻辑与 get_anime_library 完全相同)
+    Scans the 'Movies' directory to build a library of available titles.
+    Logic is identical to get_anime_library, but targets the 'Movies' folder.
     """
-    movie_dir = get_media_path("Movies")  # <-- 唯一的区别：扫描 "Movies"
+    movie_dir = get_media_path("Movies")  # Scan "Movies" directory
     library = []
 
     try:
-        # 遍历 "Movies" 目录下的所有条目
+        # Iterate through all entries in the "Movies" directory
         for entry in os.scandir(movie_dir):
             if not entry.is_dir():
                 continue
@@ -106,7 +111,7 @@ async def get_movie_library():
             poster_url = None
 
             try:
-                # 遍历这个子文件夹内部的所有文件
+                # Scan inside the folder for an image
                 for item_in_folder in os.scandir(entry.path):
                     if not item_in_folder.is_file():
                         continue
@@ -115,7 +120,7 @@ async def get_movie_library():
 
                     if file_ext in ALLOWED_POSTER_EXTENSIONS:
                         poster_name = item_in_folder.name
-                        # 构建 URL: /static_media/Movies/Movie Title/poster.jpg
+                        # Construct URL: /static_media/Movies/Movie Title/poster.jpg
                         poster_url = f"/static_media/Movies/{item_title}/{poster_name}"
                         break
 
@@ -131,7 +136,7 @@ async def get_movie_library():
             ))
 
     except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限读取 Movies 目录")
+        raise HTTPException(status_code=403, detail="Permission denied reading Movies directory")
 
     library.sort(key=lambda x: x.title)
     return library

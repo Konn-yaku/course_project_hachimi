@@ -1,21 +1,28 @@
-# app/models/file.py
 from pydantic import BaseModel
 from datetime import datetime
 
 
 class FileItem(BaseModel):
+    """
+    Represents a single file or directory in the file manager.
+    """
     name: str
-    is_dir: bool  # 告诉前端这是文件还是文件夹 (用于显示 📁 或 📄)
+    is_dir: bool  # Indicates if the item is a directory (True) or a file (False)
     modified: datetime
-    size: int  # (对于文件夹，我们可以设为 0)
+    size: int  # File size in bytes (typically 0 for directories)
 
 
 class DirectoryListing(BaseModel):
-    path: str  # 当前浏览的相对路径
+    """
+    Represents the contents of a directory for API responses.
+    """
+    path: str  # The relative path currently being browsed (e.g., "Movies/Action")
     items: list[FileItem]
 
 
 class MediaItem(BaseModel):
+    """
+    Represents a media entry (Movie or Anime) for the visual library.
+    """
     title: str
-    poster_url: str
-
+    poster_url: str # URL path to the poster image (e.g., /static_media/...)

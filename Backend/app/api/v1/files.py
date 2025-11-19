@@ -1,4 +1,3 @@
-# app/api/v1/files.py
 import os
 import shutil
 from pathlib import Path
@@ -16,70 +15,91 @@ router = APIRouter()
 
 
 class MkdirRequest(BaseModel):
-    path: str = "."  # 将在新文件夹创建在哪个相对路径下
-    folder_name: str  # 新文件夹的名称
+    """
+    Request model for creating a new directory.
+    """
+    path: str = "."   # The relative path where the new folder will be created
+    folder_name: str  # The name of the new folder
+
 
 class DeleteRequest(BaseModel):
-    path: str           # 当前目录（相对 MEDIA_ROOT_PATH），比如 '.' 或 'Anime/Frieren'
-    name: str           # 要删除的文件/文件夹名
+    """
+    Request model for deleting a file or directory.
+    """
+    path: str           # Current directory relative to MEDIA_ROOT_PATH (e.g., '.' or 'Anime/Frieren')
+    name: str           # The name of the file or folder to delete
     is_dir: bool = False
 
 
 class MoveCopyRequest(BaseModel):
-    src_path: str       # 源目录，相对路径
-    dst_path: str       # 目标目录，相对路径
-    name: str           # 文件/文件夹名
+    """
+    Request model for moving or copying files/directories.
+    """
+    src_path: str       # Source directory (relative path)
+    dst_path: str       # Destination directory (relative path)
+    name: str           # Name of the file or folder
     is_dir: bool = False
-    mode: Literal["copy", "cut"] = "copy"   # copy = 复制, cut = 剪切
+    mode: Literal["copy", "cut"] = "copy"   # copy = Duplicate, cut = Move
 
 
 def get_real_path(user_path: str) -> Path:
     """
-    安全地将用户请求的相对路径转换为服务器上的绝对路径。
-    包含关键的安全检查。
+    Safely convert a user-provided relative path to an absolute server path.
+    Includes critical security checks to prevent Path Traversal attacks.
+
+    Args:
+        user_path (str): The relative path requested by the user (e.g., "Movies/Action").
+
+    Returns:
+        Path: The resolved absolute path on the filesystem.
+
+    Raises:
+        HTTPException: If path is invalid, out of bounds, or does not exist.
     """
-    # 1. 将用户路径规范化，去除 ".." 或 "."
-    # e.g., "Photos/../Anime" -> "Anime"
+    # 1. Normalize the path to remove redundant separators or ".."
+    # e.g., "Photos/../Anime" becomes "Anime"
     safe_path = Path(os.path.normpath(user_path))
 
-    # 2. 禁止以 ".." 或 "/" 开头的路径
+    # 2. Security Check: Prevent paths starting with ".." or absolute paths
     if safe_path.is_absolute() or str(safe_path).startswith(".."):
-        raise HTTPException(status_code=400, detail="非法的路径请求")
+        raise HTTPException(status_code=400, detail="Invalid path request")
 
-    # 3. 拼接我们的媒体根目录和用户请求的路径
+    # 3. Construct the full path by joining with MEDIA_ROOT_PATH
     # e.g., /path/to/my_media_files + Anime
     full_path = settings.MEDIA_ROOT_PATH.joinpath(safe_path).resolve()
 
-    # 4. 关键安全检查：确保解析后的路径仍在我们的根目录内
+    # 4. Critical Security Check: Ensure the resolved path is still within MEDIA_ROOT_PATH
+    # This prevents accessing system files like /etc/passwd
     if not str(full_path).startswith(str(settings.MEDIA_ROOT_PATH.resolve())):
-        raise HTTPException(status_code=403, detail="禁止访问：路径越界")
+        raise HTTPException(status_code=403, detail="Access Denied: Path traversal detected")
 
-    # 5. 检查路径是否存在
+    # 5. Verify existence
     if not full_path.exists():
-        raise HTTPException(status_code=404, detail="路径不存在")
+        raise HTTPException(status_code=404, detail="Path does not exist")
 
     return full_path
 
 
 @router.get("/browse", response_model=DirectoryListing)
 async def browse_directory(
-    # Query() 定义了一个查询参数, 默认值是 "." (代表根目录)
-    path: str = Query(default=".", description="要浏览的相对路径")
+    # Query parameter default is "." (Root directory)
+    path: str = Query(default=".", description="Relative path to browse")
 ):
     """
-    浏览媒体根目录下的文件和文件夹。
+    List files and directories within a specific path in the media root.
     """
     try:
         real_path = get_real_path(path)
     except HTTPException as e:
-        # 将 get_real_path 抛出的异常直接返回给用户
+        # Re-raise exceptions from the helper function
         raise e
 
     if not real_path.is_dir():
-        raise HTTPException(status_code=400, detail="请求的路径不是一个目录")
+        raise HTTPException(status_code=400, detail="Requested path is not a directory")
 
     file_items = []
     try:
+        # Iterate through directory entries
         for entry in os.scandir(real_path):
             stat = entry.stat()
             file_items.append(FileItem(
@@ -89,98 +109,97 @@ async def browse_directory(
                 size=stat.st_size if not entry.is_dir() else 0
             ))
     except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限读取该目录")
+        raise HTTPException(status_code=403, detail="Permission denied reading directory")
 
-    # 按类型（文件夹在前）和名称排序
+    # Sort items: Directories first, then files (alphabetical order)
     file_items.sort(key=lambda x: (not x.is_dir, x.name.lower()))
 
     return DirectoryListing(
-        path=path,  # 返回用户请求的相对路径
+        path=path,  # Return the requested relative path for UI context
         items=file_items
     )
 
 
 @router.post("/upload")
 async def upload_files(
-        path: str = Form(default=".", description="文件上传的目标相对路径"),
-        files: list[UploadFile] = File(description="要上传的文件列表"),
-        # user: dict = Depends(get_current_user) # <-- 之前让你删掉了鉴权，这里不需要加回来
+        path: str = Form(default=".", description="Target relative path for upload"),
+        files: list[UploadFile] = File(description="List of files to upload"),
 ):
     """
-    智能上传：自动识别视频文件，创建对应文件夹并下载海报。
+    Smart Upload: Automatically detects video files, queries TMDB for metadata,
+    creates a dedicated folder, and downloads the poster.
     """
     uploaded_details = []
 
     try:
         base_destination_dir = get_real_path(path)
         if not base_destination_dir.is_dir():
-            raise HTTPException(status_code=400, detail="目标路径不是一个目录")
+            raise HTTPException(status_code=400, detail="Target path is not a directory")
 
         for file in files:
-            # === 智能识别逻辑开始 ===
+            # === Smart Recognition Logic Start ===
             final_folder = base_destination_dir
             poster_path_from_tmdb = None
-            recognition_status = "未识别/普通文件"
+            recognition_status = "Unrecognized/Standard File"
 
-            # 1. 检查是否是视频
+            # 1. Check if it is a video file
             if is_video_file(file.filename):
-                print(f"正在识别视频: {file.filename} ...")
+                print(f"Analyzing video: {file.filename} ...")
 
-                # 2. 调用我们的 TMDB 服务
+                # 2. Call TMDB service to analyze filename
                 official_title, media_type, poster_ext, _ = analyze_filename(file.filename)
 
                 if official_title:
-                    # 3. 识别成功！
-                    # 决定新文件夹的名字。例如: "Avatar (2009)" 或者只是 "Avatar"
-                    # 为了简单，我们直接用官方标题。
-                    # 注意：我们要处理非法字符 (比如 Windows 不允许文件名包含 : ? 等)
+                    # 3. Recognition Success!
+                    # Determine new folder name. Sanitize title to remove illegal characters.
                     safe_title = "".join([c for c in official_title if c not in r'\/:*?"<>|'])
 
-                    # 创建子目录
+                    # Create subdirectory for the media
                     new_sub_folder = base_destination_dir.joinpath(safe_title)
                     if not new_sub_folder.exists():
                         os.makedirs(new_sub_folder)
 
-                    # 更新保存路径
+                    # Update save destination
                     final_folder = new_sub_folder
                     poster_path_from_tmdb = poster_ext
-                    recognition_status = f"识别成功: {safe_title} ({media_type})"
+                    recognition_status = f"Recognized: {safe_title} ({media_type})"
                 else:
-                    print("TMDB 未找到匹配项")
+                    print("No match found on TMDB")
 
-            # === 智能识别逻辑结束 ===
+            # === Smart Recognition Logic End ===
 
-            # 4. 保存文件 (存到 final_folder)
+            # 4. Save the file (to final_folder)
             file_path = final_folder.joinpath(file.filename)
 
             if file_path.exists():
-                # 简单处理：如果文件已存在，跳过 (或者你可以改为覆盖/重命名)
-                uploaded_details.append(f"{file.filename} (跳过: 已存在)")
+                # Simple handling: Skip if file exists
+                uploaded_details.append(f"{file.filename} (Skipped: Already exists)")
                 continue
 
             try:
+                # Write file content asynchronously
                 with open(file_path, "wb") as buffer:
-                    while contents := await file.read(1024 * 1024):
+                    while contents := await file.read(1024 * 1024): # Read in 1MB chunks
                         buffer.write(contents)
 
-                # 5. 如果有海报，下载海报 (保存到 final_folder)
+                # 5. Download poster if available
                 if poster_path_from_tmdb:
                     download_poster(poster_path_from_tmdb, str(final_folder))
 
                 uploaded_details.append(f"{file.filename} -> {recognition_status}")
 
             except Exception as e:
-                uploaded_details.append(f"{file.filename} (失败: {str(e)})")
+                uploaded_details.append(f"{file.filename} (Failed: {str(e)})")
             finally:
-                await file.close()
+                await file.close() # Ensure file handle is closed
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"上传过程中发生错误: {e}")
+        raise HTTPException(status_code=500, detail=f"Unexpected error during upload: {e}")
 
     return {
-        "message": "上传处理完成",
+        "message": "Upload processing complete",
         "details": uploaded_details
     }
 
@@ -190,101 +209,102 @@ async def create_directory(
     request: MkdirRequest
 ):
     """
-    在指定的相对路径下创建一个新文件夹。
+    Create a new directory at the specified relative path.
     """
 
-    # 1. 验证新文件夹名称的安全性
-    # 确保名称中不含 ".." 或 "/"
+    # 1. Validate directory name safety
+    # Ensure name does not contain traversal characters
     if ".." in request.folder_name or "/" in request.folder_name or "\\" in request.folder_name:
         raise HTTPException(
             status_code=400,
-            detail="非法的文件夹名称"
+            detail="Invalid folder name"
         )
 
     try:
-        # 2. 获取 *父* 目录的真实路径
+        # 2. Get the real path of the *parent* directory
         parent_dir = get_real_path(request.path)
     except HTTPException as e:
-        # 如果 get_real_path 失败 (例如, 越界或路径非法)
         raise e
 
-    # 3. 确保父目录是一个目录
+    # 3. Ensure parent is a directory
     if not parent_dir.is_dir():
-        raise HTTPException(status_code=400, detail="目标路径不是一个目录")
+        raise HTTPException(status_code=400, detail="Target path is not a directory")
 
-    # 4. 构建新文件夹的完整路径
+    # 4. Construct full path for the new folder
     new_folder_path = parent_dir.joinpath(request.folder_name)
 
-    # 5. 检查文件夹是否已存在
+    # 5. Check if it already exists
     if new_folder_path.exists():
         raise HTTPException(
-            status_code=409,  # 409 Conflict 是一个很合适的状态码
-            detail="该名称的文件夹或文件已存在"
+            status_code=409,
+            detail="Folder or file with this name already exists"
         )
 
     try:
-        # 6. 创建目录
+        # 6. Create the directory
         os.makedirs(new_folder_path)
     except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限在此位置创建文件夹")
+        raise HTTPException(status_code=403, detail="Permission denied to create folder here")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"创建文件夹时出错: {e}")
+        raise HTTPException(status_code=500, detail=f"Error creating folder: {e}")
 
     return {
-        "message": "文件夹创建成功",
+        "message": "Folder created successfully",
         "new_folder_path": f"{request.path}/{request.folder_name}"
     }
 
 @router.post("/delete")
 async def delete_entry(req: DeleteRequest):
     """
-    删除指定目录下的文件或文件夹
+    Delete a specific file or directory.
+    Recursive deletion is performed if the target is a directory.
     """
     base_root: Path = settings.MEDIA_ROOT_PATH.resolve()
 
-    # 规范化路径
+    # Normalize path
     rel = (req.path or ".").strip().strip("/")
     real_dir = (base_root / rel).resolve()
 
-    # 安全检查：必须在 MEDIA_ROOT_PATH 之内
+    # Security Check: Must be within MEDIA_ROOT_PATH
     if base_root not in real_dir.parents and real_dir != base_root:
-        raise HTTPException(status_code=400, detail="非法路径")
+        raise HTTPException(status_code=400, detail="Invalid path")
 
     target = real_dir / req.name
 
     if not target.exists():
-        raise HTTPException(status_code=404, detail="目标不存在")
+        raise HTTPException(status_code=404, detail="Target does not exist")
 
-    # 类型检查
+    # Type consistency check
     if req.is_dir and not target.is_dir():
-        raise HTTPException(status_code=400, detail="目标不是文件夹")
+        raise HTTPException(status_code=400, detail="Target is not a directory")
     if not req.is_dir and not target.is_file():
-        raise HTTPException(status_code=400, detail="目标不是文件")
+        raise HTTPException(status_code=400, detail="Target is not a file")
 
     try:
         if target.is_dir():
-            shutil.rmtree(target)
+            shutil.rmtree(target) # Recursive delete
         else:
-            target.unlink()
+            target.unlink() # Delete file
     except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限删除")
+        raise HTTPException(status_code=403, detail="Permission denied")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"删除失败: {e}")
+        raise HTTPException(status_code=500, detail=f"Delete failed: {e}")
 
-    return {"message": "删除成功"}
+    return {"message": "Delete successful"}
 
 @router.post("/move_copy")
 async def move_or_copy(req: MoveCopyRequest):
     """
-    在目录之间复制/移动文件或文件夹
+    Copy or Move files/folders between directories.
     """
     base_root: Path = settings.MEDIA_ROOT_PATH.resolve()
 
     def resolve_sub(path_str: str) -> Path:
+        """Helper to resolve and validate sub-paths"""
         rel = (path_str or ".").strip().strip("/")
         p = (base_root / rel).resolve()
         if base_root not in p.parents and p != base_root:
-            raise HTTPException(status_code=400, detail="非法路径")
+            raise HTTPException(status_code=400, detail="Invalid path detected")
         return p
 
     try:
@@ -293,22 +313,22 @@ async def move_or_copy(req: MoveCopyRequest):
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=400, detail=f"路径错误: {e}")
+        raise HTTPException(status_code=400, detail=f"Path error: {e}")
 
     src = src_dir / req.name
     dst = dst_dir / req.name
 
     if not src.exists():
-        raise HTTPException(status_code=404, detail="源文件不存在")
+        raise HTTPException(status_code=404, detail="Source file does not exist")
 
-    # 类型检查
+    # Type Check
     if req.is_dir and not src.is_dir():
-        raise HTTPException(status_code=400, detail="源不是文件夹")
+        raise HTTPException(status_code=400, detail="Source is not a directory")
     if not req.is_dir and not src.is_file():
-        raise HTTPException(status_code=400, detail="源不是文件")
+        raise HTTPException(status_code=400, detail="Source is not a file")
 
     if dst.exists():
-        raise HTTPException(status_code=400, detail="目标已存在（暂不覆盖）")
+        raise HTTPException(status_code=400, detail="Destination already exists (Overwrite not supported)")
 
     try:
         if req.mode == "copy":
@@ -319,8 +339,8 @@ async def move_or_copy(req: MoveCopyRequest):
         else:  # cut -> move
             shutil.move(str(src), str(dst))
     except PermissionError:
-        raise HTTPException(status_code=403, detail="没有权限执行复制/移动")
+        raise HTTPException(status_code=403, detail="Permission denied during copy/move")
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"复制/移动失败: {e}")
+        raise HTTPException(status_code=500, detail=f"Copy/Move failed: {e}")
 
-    return {"message": "操作成功"}
+    return {"message": "Operation successful"}

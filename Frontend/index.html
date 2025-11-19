@@ -6,7 +6,7 @@
   <title>Home Cloud · UI Template</title>
   <style>
     /* ============================
-       Color System (Mint/Green)
+       Color System (Mint/Green Theme)
        ============================ */
     :root{
       --bg: #f4fbf7;
@@ -20,9 +20,9 @@
       --brand-400:#5bd6a8;
       --brand-500:#36c792;
       --brand-600:#26a679;
-      --brand-700:#1a825e;       
+      --brand-700:#1a825e;
       --ring: rgba(54,199,146,.45);
-      --border: #e5efe8;         
+      --border: #e5efe8;
       --shadow: 0 10px 30px rgba(18, 72, 52, .08);
     }
 
@@ -36,7 +36,7 @@
     }
 
     /* ============================
-       Layout
+       Layout Architecture
        ============================ */
     .app {
       display: grid;
@@ -44,7 +44,7 @@
       min-height: 100vh;
     }
 
-    /* Sidebar */
+    /* Sidebar Styles */
     .sidebar {
       position: sticky;
       top: 0;
@@ -74,6 +74,7 @@
     .brand h1 { font-size: 16px; margin: 0; }
     .brand span { display:block; font-size: 12px; color: var(--ink-dim); }
 
+    /* Navigation Menu */
     .nav {
       display: grid;
       gap: 6px;
@@ -89,29 +90,25 @@
 
     .nav svg{ width: 18px; height: 18px; }
 
-    .field{ display: grid; gap: 8px; margin-bottom: 10px; }
-    .field label{ font-size: 12px; color: var(--ink-dim); }
-    .field input{ padding: 10px 12px; border:1px solid var(--border); border-radius: 10px; outline: none; }
-    .field input:focus{ border-color: var(--brand-400); box-shadow: 0 0 0 4px var(--ring); }
-    .btn{ 
+    .btn{
       display: inline-flex; align-items: center; justify-content: center; gap:8px;
       padding: 10px 12px; border-radius: 10px; border: none; cursor: pointer;
       background: linear-gradient(135deg, var(--brand-500), var(--brand-600)); color: white; font-weight: 600;
       box-shadow: var(--shadow);
     }
 
-    /* Main area */
+    /* Main Content Area */
     .main {
-        padding: 14px 32px 36px 32px;
-        display: grid;
-        grid-template-rows: auto 1fr;
-        gap: 14px;
-        min-height: 100vh;
+      padding: 14px 32px 36px 32px;
+      display: grid;
+      grid-template-rows: auto 1fr;
+      gap: 14px;
+      min-height: 100vh;
     }
 
     .main > section.panel {
-        grid-row: 2;
-        min-height: 100%;
+      grid-row: 2;
+      min-height: 100%;
     }
 
     .toolbar{
@@ -127,7 +124,7 @@
       min-width: 260px; padding: 10px 12px; border:1px solid var(--border); border-radius: 10px;
     }
 
-    /* Panels */
+    /* Generic Panel Style */
     .panel{
       background: var(--panel); border:1px solid var(--border); border-radius: 18px; padding: 18px; box-shadow: var(--shadow);
     }
@@ -143,55 +140,55 @@
     .card{
       border:1px solid var(--border); border-radius: 14px; overflow: hidden; background: #fff; display: grid; grid-template-rows: auto auto;
       transition: transform .15s ease, box-shadow .15s ease;
+      cursor: pointer;
     }
     .card:hover{ transform: translateY(-2px); box-shadow: var(--shadow); }
 
-    /* 16:9 poster (rectangular) */
+    /* 16:9 Poster Container */
     .thumb-rect{
-    position: relative;
-    width: 100%;
-    aspect-ratio: 2 / 3;
-    overflow: hidden;
-    border-radius: 12px;
-    background: #f1f6f3;
+      position: relative;
+      width: 100%;
+      aspect-ratio: 2 / 3;
+      overflow: hidden;
+      border-radius: 12px;
+      background: #f1f6f3;
     }
     .thumb-rect img{
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    display: block;
-    object-fit: cover;
-    object-position: center;
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: cover;
+      object-position: center;
     }
 
     .card .meta{
-    padding: 10px 12px;
-    font-size: 14px;
-    line-height: 1.3;
-    min-height: calc(1.3em * 2);
-    display: -webkit-box;
-    -webkit-box-orient: vertical;
-    -webkit-line-clamp: 2;
-    overflow: hidden;
+      padding: 10px 12px;
+      font-size: 14px;
+      line-height: 1.3;
+      min-height: calc(1.3em * 2);
+      display: -webkit-box;
+      -webkit-box-orient: vertical;
+      -webkit-line-clamp: 2;
+      overflow: hidden;
     }
 
     /* ============================
        Photos (Square Grid)
        ============================ */
     .square-grid{ --min: 200px; display:grid; gap:14px; grid-template-columns: repeat(auto-fill, minmax(var(--min), 1fr)); }
-    .thumb-square{ aspect-ratio: 1/1; width: 100%; border-radius: 10px; overflow: hidden; background: linear-gradient(180deg, var(--brand-100), #eef8f3); position: relative; }
-    .thumb-square img{ position:absolute; inset:0; width:100%; height:100%; object-fit: cover; }
 
-    .square-grid .thumb-square{
-    background: #e2f3ea;
-    border-radius: 18px;
-    overflow: hidden;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    cursor: pointer;   /* ⭐ 让鼠标变小手 */
-  }
+    .thumb-square{
+      aspect-ratio: 1/1; width: 100%; border-radius: 10px; overflow: hidden;
+      background: linear-gradient(180deg, var(--brand-100), #eef8f3);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer; /* Changes cursor to pointer on hover */
+    }
+    .thumb-square img{ position:absolute; inset:0; width:100%; height:100%; object-fit: cover; }
 
     /* ============================
        File Manager (Explorer-like)
@@ -207,13 +204,14 @@
     .fm-row{ display:grid; grid-template-columns: 40px 2fr 1fr 1fr 1fr; align-items:center; gap: 8px; padding: 10px 12px; border-bottom:1px solid var(--border); }
     .fm-row:last-child{ border-bottom: none; }
     .fm-cell{ white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    /* File Manager hover & cursor */
+
+    /* File Manager hover & cursor behavior */
     .fm-row .fm-cell{
-      cursor: inherit;      /* 子元素跟随整行的鼠标样式 */
-      user-select: none;    /* 防止变成文字选中光标 */
+      cursor: inherit;
+      user-select: none;    /* Prevent text selection on double click */
     }
 
-    /* 只有可点击的“文件夹行”变小手 + 变色 */
+    /* Only directory rows show pointer cursor and hover effect */
     .fm-row[data-is-dir="true"]{
       cursor: pointer;
     }
@@ -234,10 +232,12 @@
     #view-files.panel{ padding-top: 10px; margin-top: 0; }
     body[data-view='files'] .main { gap: 6px; }
     body[data-view='files'] .toolbar { margin-bottom: 0; padding-block: 2px; }
-        /* ---------- File Manager 右键菜单 ---------- */
-    /* 右键菜单 */
+
+    /* ============================
+       Context Menu (Right Click)
+       ============================ */
     .fm-context-menu{
-      position: fixed;          /* 必须是 fixed，才能用屏幕坐标 */
+      position: fixed;          /* Fixed positioning to use screen coordinates */
       z-index: 9999;
       background: #fff;
       border: 1px solid var(--border);
@@ -245,7 +245,7 @@
       box-shadow: 0 10px 30px rgba(15,23,42,0.18);
       min-width: 160px;
       padding: 4px 0;
-      display: none;            /* 初始不显示 */
+      display: none;            /* Hidden by default */
       font-size: 14px;
     }
 
@@ -254,7 +254,7 @@
     }
 
     .fm-context-menu ul{
-      list-style: none;         /* 去掉你截图里的小圆点 */
+      list-style: none;
       margin: 0;
       padding: 0;
     }
@@ -287,44 +287,38 @@
     }
 
     /* ============================
-   Photo Preview Overlay
-   ============================ */
+       Photo Preview Overlay
+       ============================ */
     .photo-overlay{
       position: fixed;
       inset: 0;
       background: rgba(0,0,0,0.7);
-      display: none;               /* 默认隐藏 */
+      display: none;               /* Hidden by default */
       align-items: center;
       justify-content: center;
-      z-index: 999;                /* 压过其他内容 */
+      z-index: 999;                /* Above everything */
     }
 
     .photo-overlay.active{
-      display: flex;               /* 显示时用 flex 居中 */
+      display: flex;               /* Centered when active */
     }
 
     .photo-overlay-content{
-      /* 只负责包一层壳，不强行限制宽高比例 */
       border-radius: 20px;
       background: #000;
       box-shadow: 0 20px 60px rgba(0,0,0,0.6);
       position: relative;
       padding: 0;
-      /* 不再用 max-width / max-height 去压缩容器本身 */
       overflow: visible;
     }
 
     .photo-overlay-content img{
       display: block;
-      /* 按原始比例渲染 */
       width: auto;
       height: auto;
-      /* 但是最大不能超过视口大小 */
-      max-width: 90vw;
-      max-height: 90vh;
-      /* 不需要再 object-fit 了，按自然比例即可 */
+      max-width: 90vw;  /* Max width 90% of viewport */
+      max-height: 90vh; /* Max height 90% of viewport */
     }
-
 
     .photo-overlay-close{
       position: absolute;
@@ -342,7 +336,7 @@
   </style>
 </head>
 
-<!-- File Manager 右键菜单 -->
+<!-- File Manager Context Menu Structure -->
 <div id="fmContextMenu" class="fm-context-menu">
   <ul>
     <li data-action="open">Open</li>
@@ -356,464 +350,435 @@
 </div>
 
 <body>
-  <div class="app">
-    <!-- =============================
-         Left Sidebar
-         ============================= -->
-    <aside class="sidebar">
-      <div class="brand">
-        <div class="logo">HCM</div>
-        <div>
-          <h1>LAN based NAS
-          </h1>
-          <span>Team Hachimi</span>
+<div class="app">
+  <!-- =============================
+       Left Sidebar
+       ============================= -->
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="logo">HCM</div>
+      <div>
+        <h1>LAN based NAS</h1>
+        <span>Team Hachimi</span>
+      </div>
+    </div>
+
+    <nav class="nav" id="nav">
+      <button class="active" data-target="anime">
+        <!-- clapper board icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><path d="M3 8h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z"/><path d="M3 8l3.6-4H12l-3.6 4"/><path d="M12 4h5.4L14 8"/></svg>
+        <span>Episode</span>
+      </button>
+      <button data-target="movies">
+        <!-- film icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><path d="M3 5h18v14H3z"/><path d="M7 5v14M17 5v14M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>
+        <span>Movies</span>
+      </button>
+      <button data-target="photos">
+        <!-- photo icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m8 14 3-3 4 5"/><circle cx="9" cy="10" r="1.5"/></svg>
+        <span>Photos</span>
+      </button>
+      <button data-target="files">
+        <!-- folder icon -->
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+        <span>File Manager</span>
+      </button>
+    </nav>
+  </aside>
+
+  <!-- =============================
+       Main Content Area
+       ============================= -->
+  <main class="main">
+    <div class="toolbar">
+      <div class="title" id="viewTitle">Anime</div>
+      <div class="search">
+        <input id="searchBox" placeholder="Search this view…" />
+        <button class="btn" id="addBtn">Search</button>
+      </div>
+    </div>
+
+    <!-- Anime View -->
+    <section id="view-anime" class="panel">
+      <div class="gallery-grid" id="animeGrid">
+      </div>
+    </section>
+
+    <!-- Movies View -->
+    <section id="view-movies" class="panel" hidden>
+      <div class="gallery-grid" id="moviesGrid">
+      </div>
+    </section>
+
+    <!-- Photos View -->
+    <section id="view-photos" class="panel" hidden>
+      <div class="square-grid" id="photosGrid">
+      </div>
+    </section>
+
+    <!-- Photo Preview Overlay -->
+    <div id="photoOverlay" class="photo-overlay">
+      <div class="photo-overlay-content">
+        <button class="photo-overlay-close" aria-label="Close preview">✕</button>
+        <img id="photoOverlayImg" src="" alt="Preview" />
+      </div>
+    </div>
+
+    <!-- Files View -->
+    <section id="view-files" class="panel" hidden>
+      <div class="fm-toolbar">
+        <button class="btn btn-back" id="fmBackBtn">← Back</button>
+        <div class="fm-path">
+          <span id="fmPath">Media</span>
+        </div>
+        <div class="fm-actions">
+          <button class="btn" id="btnNewFolder">New Folder</button>
+          <button class="btn" id="btnUpload">Upload</button>
+          <!-- Hidden input for file selection -->
+          <input type="file" id="fmUploadInput" multiple style="display:none" />
         </div>
       </div>
-
-      <nav class="nav" id="nav">
-        <button class="active" data-target="anime">
-          <!-- clapper board icon -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><path d="M3 8h18v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8Z"/><path d="M3 8l3.6-4H12l-3.6 4"/><path d="M12 4h5.4L14 8"/></svg>
-          <span>Episode</span>
-        </button>
-        <button data-target="movies">
-          <!-- film icon -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><path d="M3 5h18v14H3z"/><path d="M7 5v14M17 5v14M3 9h4M17 9h4M3 15h4M17 15h4"/></svg>
-          <span>Movies</span>
-        </button>
-        <button data-target="photos">
-          <!-- photo icon -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m8 14 3-3 4 5"/><circle cx="9" cy="10" r="1.5"/></svg>
-          <span>Photos</span>
-        </button>
-        <button data-target="files">
-          <!-- folder icon -->
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" class="icon"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
-          <span>File Manager</span>
-        </button>
-      </nav>
-    </aside>
-
-    <!-- =============================
-         Main Content Area
-         ============================= -->
-    <main class="main">
-      <div class="toolbar">
-        <div class="title" id="viewTitle">Anime</div>
-        <div class="search">
-          <input id="searchBox" placeholder="Search this view…" />
-          <button class="btn" id="addBtn">Search</button>
+      <div class="fm-table" id="fmTable">
+        <div class="fm-row header">
+          <div class="fm-cell"></div>
+          <div class="fm-cell">Name</div>
+          <div class="fm-cell">Type</div>
+          <div class="fm-cell">Modified</div>
+          <div class="fm-cell hide-sm">Size</div>
         </div>
+
+        <!-- Dynamic file rows container -->
+        <div id="fileTableBody"></div>
       </div>
+    </section>
+  </main>
+</div>
 
-      <!-- Anime View (rectangular posters with name below) -->
-      <section id="view-anime" class="panel">
-        <div class="gallery-grid" id="animeGrid">
-        </div>
-      </section>
+<input type="file" id="imgPicker" accept="image/*" multiple style="display:none" />
 
-      <!-- Movies View (like Anime) -->
-      <section id="view-movies" class="panel" hidden>
-        <div class="gallery-grid" id="moviesGrid">
-        </div>
-      </section>
+<script>
+  // =====================================================
+  // Configuration & State Management
+  // =====================================================
 
-      <!-- Photos View (square thumbnails, no names) -->
-      <section id="view-photos" class="panel" hidden>
-        <div class="square-grid" id="photosGrid">
-        </div>
-      </section>
+  // File Manager State
+  let currentPath = '.';       // Current relative path to 'my_media_folder'
+  let filesLoadedOnce = false; // Optimization to prevent re-fetching root on every tab switch
+  let currentFileItems = [];   // Cache of current directory items for client-side search
 
-      <!-- Photo Preview Overlay -->
-      <div id="photoOverlay" class="photo-overlay">
-        <div class="photo-overlay-content">
-          <button class="photo-overlay-close" aria-label="Close preview">✕</button>
-          <img id="photoOverlayImg" src="" alt="Preview" />
-        </div>
-      </div>
+  // Backend Configuration
+  // Automatically determines the host (e.g., localhost or LAN IP like 192.168.x.x)
+  const BACKEND_HOST = window.location.hostname;
+  const BACKEND_PORT = 8000;
 
-      <!-- Files View (Explorer-like) -->
-      <section id="view-files" class="panel" hidden>
-        <div class="fm-toolbar">
-          <button class="btn btn-back" id="fmBackBtn">← Back</button>
-          <div class="fm-path">
-            <span id="fmPath">Media</span>
-          </div>
-          <div class="fm-actions">
-            <button class="btn" id="btnNewFolder">New Folder</button>
-            <button class="btn" id="btnUpload">Upload</button>
-            <input type="file" id="fmUploadInput" multiple style="display:none" />
-          </div>
-        </div>
-        <div class="fm-table" id="fmTable">
-          <div class="fm-row header">
-            <div class="fm-cell"></div>
-            <div class="fm-cell">Name</div>
-            <div class="fm-cell">Type</div>
-            <div class="fm-cell">Modified</div>
-            <div class="fm-cell hide-sm">Size</div>
-          </div>
+  const API_ROOT  = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
+  const API_BASE  = `${API_ROOT}/api/v1`;
+  const API_MEDIA = `${API_BASE}/media`;
+  const API_FILES = `${API_BASE}/files`;
 
-          <!-- 这一行是关键，新加的容器 -->
-          <div id="fileTableBody"></div>
-        </div>
-      </section>
-    </main>  </div>  <input type="file" id="imgPicker" accept="image/*" multiple style="display:none" />  <script>
-    // =====================================================
-    // Minimal JS for view switching + sample placeholders
-    // =====================================================
-    // ============= File Manager 状态 =============
-    let currentPath = '.';       // 当前浏览的路径，相对 my_media_folder
-    let filesLoadedOnce = false; // 是否已经加载过（避免每次切换都重新拉）
-    let currentFileItems = [];   // ⭐ 当前目录的完整文件列表，用于搜索过滤
-    const fmPathEl = document.getElementById('fmPath');
-    
-    
-    //后端地址（开发阶段）
-    // 🔧 自动使用当前访问这个页面的主机名
-    const BACKEND_HOST = window.location.hostname;  // 比如 192.168.3.6 或 localhost
-    const BACKEND_PORT = 8000;                      // 你后端固定 8000 端口
+  // DOM Elements
+  const nav = document.getElementById('nav');
+  const title = document.getElementById('viewTitle');
+  const fmPathEl = document.getElementById('fmPath');
 
-    const API_ROOT  = `http://${BACKEND_HOST}:${BACKEND_PORT}`;
-    const API_BASE  = `${API_ROOT}/api/v1`;
-    const API_MEDIA = `${API_BASE}/media`;
-    const API_FILES = `${API_BASE}/files`;
+  // View Containers
+  const views = {
+    anime: document.getElementById('view-anime'),
+    movies: document.getElementById('view-movies'),
+    photos: document.getElementById('view-photos'),
+    files: document.getElementById('view-files')
+  };
 
+  // Grids & Overlays
+  const photosGrid = document.getElementById('photosGrid');
+  const photoOverlay = document.getElementById('photoOverlay');
+  const photoOverlayImg = document.getElementById('photoOverlayImg');
+  const animeGrid = document.getElementById('animeGrid');
+  const moviesGrid = document.getElementById('moviesGrid');
 
-    // 后端根地址，用来拼图片 URL
+  // File Manager Actions
+  const btnNewFolder = document.getElementById('btnNewFolder');
+  const btnUpload = document.getElementById('btnUpload');
+  const fmUploadInput = document.getElementById('fmUploadInput');
 
-    const nav = document.getElementById('nav');
-    const title = document.getElementById('viewTitle');
+  // Context Menu Elements
+  const fmPanel = document.getElementById('view-files');
+  const fmTable = document.getElementById('fmTable');
+  const fmMenu  = document.getElementById('fmContextMenu');
 
-    // Photos 预览相关 DOM
-    const photosGrid = document.getElementById('photosGrid');
-    const photoOverlay = document.getElementById('photoOverlay');
-    const photoOverlayImg = document.getElementById('photoOverlayImg');
-    const photoOverlayClose = document.querySelector('.photo-overlay-close');
+  // Context Menu State
+  let fmContextTarget = null;  // Stores info about the right-clicked item: { type: 'entry' | 'blank', name, isDir, path }
+  let fmClipboard = null;      // Stores clipboard info: { mode: 'copy' | 'cut', path, name, isDir }
 
-    const animeGrid = document.getElementById('animeGrid');    // ⭐ 新增
-    const moviesGrid = document.getElementById('moviesGrid');  // ⭐ 新增
+  // Local placeholder data (used as fallback if API fails)
+  let animeSeed = [];
+  let movieSeed = [];
+  let photoSeed = [];
 
-    const btnNewFolder = document.getElementById('btnNewFolder');
-    const btnUpload = document.getElementById('btnUpload');
-    const fmUploadInput = document.getElementById('fmUploadInput');
+  // =====================================================
+  // Anime Logic
+  // =====================================================
 
-    // 右键相关
-    const fmPanel = document.getElementById('view-files');   // 整个 File Manager 面板
-    const fmTable = document.getElementById('fmTable');
-    const fmMenu  = document.getElementById('fmContextMenu');
+  function renderAnime(list) {
+    const grid = document.getElementById('animeGrid');
+    if (!grid) return;
 
-    // 当前右键目标 & 剪切板
-    let fmContextTarget = null;  // { type: 'entry' | 'blank', name, isDir, path }
-    let fmClipboard = null;      // { mode: 'copy' | 'cut', path, name, isDir }
+    const data = list || animeSeed;   // Use filtered list if provided, otherwise full seed
 
-    const views = {
-      anime: document.getElementById('view-anime'),
-      movies: document.getElementById('view-movies'),
-      photos: document.getElementById('view-photos'),
-      files: document.getElementById('view-files')
-    };
-
-    // -----------------------------------------------------
-    // Placeholder content so the layout is visible now
-    // You can replace these arrays with scraped data later.
-    // -----------------------------------------------------
-    let animeSeed = [
-      
-    ];
-
-    let movieSeed = [
-
-    ];
-
-    // ================ Photos ================
-    let photoSeed = [];
-
-    function renderAnime(list) {
-      const grid = document.getElementById('animeGrid');
-      if (!grid) return;
-
-      const data = list || animeSeed;   // ⭐ 没传就用全量 animeSeed
-
-      grid.innerHTML = data.map(item => `
+    grid.innerHTML = data.map(item => `
         <article class="card" data-folder="Anime/${item.title}">
           <div class="thumb-rect">
             ${item.poster
-              ? `<img src="${item.poster}" alt="${item.title} poster"/>`
-              : `<span>16:9 Poster</span>`}
+            ? `<img src="${item.poster}" alt="${item.title} poster"/>`
+            : `<span>16:9 Poster</span>`}
           </div>
           <div class="meta">${item.title}</div>
         </article>
       `).join('');
-    }
-        // 从 NAS 后端加载 Anime 列表
-    async function loadAnimeFromApi() {
-      try {
-        const res = await fetch(`${API_MEDIA}/anime`);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch anime: ${res.status}`);
-        }
+  }
 
-        const data = await res.json(); 
-        // data 是后端返回的 MediaItem[]，结构类似：
-        // [{ title: "地缚少年花子君", poster_url: "/static_media/Anime/地缚少年花子君/poster.jpg" }, ...]
-
-        // 映射成前端内部使用的结构
-        animeSeed = data.map(item => ({
-          title: item.title,
-          // poster_url 是相对路径，这里拼成完整 URL
-          poster: `${API_ROOT}${item.poster_url}`,
-        }));
-
-        renderAnime();
-      } catch (err) {
-        console.error(err);
-        alert('从 NAS 加载 Anime 失败，先用本地假数据展示');
-
-        // 如果你想在失败时退回以前的静态假数据，可以在这里手动填回一份：
-        if (animeSeed.length === 0) {
-          animeSeed = [
-            { title: 'SPY×FAMILY Season 3', poster: 'Anime/SPY×FAMILY Season 3.webp' },
-            // ... 你原来的那堆占位数据，爱不爱都行
-          ];
-        }
-        renderAnime();
+  // Fetch Anime list from Backend API
+  async function loadAnimeFromApi() {
+    try {
+      const res = await fetch(`${API_MEDIA}/anime`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch anime: ${res.status}`);
       }
+
+      const data = await res.json();
+      // data structure: [{ title: "Title", poster_url: "/static_media/Anime/Title/poster.jpg" }, ...]
+
+      // Map backend data to frontend structure
+      animeSeed = data.map(item => ({
+        title: item.title,
+        // Append API_ROOT to relative poster path
+        poster: `${API_ROOT}${item.poster_url}`,
+      }));
+
+      renderAnime();
+    } catch (err) {
+      console.error(err);
+      // Fallback to empty or placeholder data on error
+      if (animeSeed.length === 0) {
+        animeSeed = [];
+      }
+      renderAnime();
     }
+  }
 
-    function renderMovies(list) {
-      const grid = document.getElementById('moviesGrid'); // 注意是 moviesGrid
-      if (!grid) return;
+  // =====================================================
+  // Movies Logic
+  // =====================================================
 
-      const data = list || movieSeed;
+  function renderMovies(list) {
+    const grid = document.getElementById('moviesGrid');
+    if (!grid) return;
 
-      grid.innerHTML = data.map(item => `
+    const data = list || movieSeed;
+
+    grid.innerHTML = data.map(item => `
         <article class="card" data-folder="Movies/${item.title}">
           <div class="thumb-rect">
             ${item.poster
-              ? `<img src="${item.poster}" alt="${item.title} poster" />`
-              : `<span>16:9 Poster</span>`}
+            ? `<img src="${item.poster}" alt="${item.title} poster" />`
+            : `<span>16:9 Poster</span>`}
           </div>
           <div class="meta">${item.title}</div>
         </article>
       `).join('');
-    }
+  }
 
-    // 从 NAS 后端加载 Movies 列表
-    async function loadMoviesFromApi() {
-      try {
-        const res = await fetch(`${API_MEDIA}/movies`);
-        if (!res.ok) {
-          throw new Error(`Failed to fetch movies: ${res.status}`);
-        }
-
-        const data = await res.json(); // 后端返回的 MediaItem[]
-
-        movieSeed = data.map(item => ({
-          title: item.title,
-          // 把 /static_media/... 拼成完整 URL
-          poster: `${API_ROOT}${item.poster_url}`,
-        }));
-
-        renderMovies();
-      } catch (err) {
-        console.error(err);
-        alert('从 NAS 加载 Movies 失败，暂时用本地占位数据');
-
-        if (movieSeed.length === 0) {
-          movieSeed = [
-            { title: 'The Godfather', poster: 'Movie/The Godfather.webp' },
-            { title: '12.12 THE DAY', poster: 'Movie/12.12THE DAY.jpg' },
-          ];
-        }
-        renderMovies();
+  // Fetch Movies list from Backend API
+  async function loadMoviesFromApi() {
+    try {
+      const res = await fetch(`${API_MEDIA}/movies`);
+      if (!res.ok) {
+        throw new Error(`Failed to fetch movies: ${res.status}`);
       }
+
+      const data = await res.json();
+
+      movieSeed = data.map(item => ({
+        title: item.title,
+        poster: `${API_ROOT}${item.poster_url}`,
+      }));
+
+      renderMovies();
+    } catch (err) {
+      console.error(err);
+      if (movieSeed.length === 0) {
+        movieSeed = [];
+      }
+      renderMovies();
     }
+  }
 
-    function renderPhotos(list) {
-      const grid = document.getElementById('photosGrid');
-      if (!grid) return;
+  // =====================================================
+  // Photos Logic
+  // =====================================================
 
-      const data = list || photoSeed;   // ⭐ 有过滤结果就用过滤结果，没有就用全量
+  function renderPhotos(list) {
+    const grid = document.getElementById('photosGrid');
+    if (!grid) return;
+
+    const data = list || photoSeed;
 
     grid.innerHTML = data.map(item => `
-      <div class="thumb-square">
-        <img src="${item.src}" alt="${item.title}" />
-      </div>
-    `).join('');
-    }
+        <div class="thumb-square">
+          <img src="${item.src}" alt="${item.title}" />
+        </div>
+      `).join('');
+  }
 
-
-    async function loadPhotosFromApi() {
-      try {
-        // 调用文件浏览接口，固定浏览 Photos 目录
-        const res = await fetch(`${API_FILES}/browse?path=Photos`);
-        if (!res.ok) {
-          throw new Error(`Failed to browse Photos: ${res.status}`);
-        }
-
-        const data = await res.json();
-        // data.items 是文件列表
-
-        // 只保留文件（不是文件夹）并且扩展名是图片
-        const imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
-        const items = (data.items || []).filter(it => {
-          if (it.is_dir) return false;
-          const lower = it.name.toLowerCase();
-          return imageExts.some(ext => lower.endsWith(ext));
-        });
-
-        // 映射成前端内部使用的结构
-        photoSeed = items.map(it => ({
-          title: it.name,
-          // 拼成 static_media 的 URL：
-          // /static_media/Photos/<文件名>
-          src: `${API_ROOT}/static_media/Photos/${encodeURIComponent(it.name)}`,
-        }));
-
-        renderPhotos();
-        } catch (err) {
-          console.error(err);
-          alert('从 NAS 加载 Photos 失败，暂时用本地占位图片');
-
-          if (photoSeed.length === 0) {
-            photoSeed = [
-              { title: 'Local Photo 1', src: 'Photo/test photo (1).jpg' },
-              { title: 'Local Photo 2', src: 'Photo/test photo (2).jpg' },
-            ];
-          }
-          renderPhotos();
-        }
+  async function loadPhotosFromApi() {
+    try {
+      // Reuse the file browse API, hardcoded to the 'Photos' directory
+      const res = await fetch(`${API_FILES}/browse?path=Photos`);
+      if (!res.ok) {
+        throw new Error(`Failed to browse Photos: ${res.status}`);
       }
 
-      // ============================
-      // Photos 预览逻辑
-      // ============================
-      if (photosGrid && photoOverlay && photoOverlayImg) {
-        // 点击缩略图 -> 打开预览
-        photosGrid.addEventListener('click', (e) => {
-          // 先找到外层方块
-          const cell = e.target.closest('.thumb-square');
-          if (!cell) return;
+      const data = await res.json();
+      // data.items contains list of files
 
-          // 再从里面取图片
-          const img = cell.querySelector('img');
-          if (!img) return;
-
-          openPhotoPreview(img.src, img.alt || '');
-        });
-
-        // 点击遮罩空白区域关闭
-        photoOverlay.addEventListener('click', (e) => {
-          if (e.target === photoOverlay || e.target.closest('.photo-overlay-close')) {
-            photoOverlay.classList.remove('active');
-            photoOverlayImg.src = '';
-          }
-        });
-
-        // ESC 键关闭
-        document.addEventListener('keydown', (e) => {
-          if (e.key === 'Escape' && photoOverlay.classList.contains('active')) {
-            photoOverlay.classList.remove('active');
-            photoOverlayImg.src = '';
-          }
-        });
-      }
-
-    // ============================
-    // Anime / Movies 点击 -> 跳到对应文件夹
-    // ============================
-    if (animeGrid) {
-      animeGrid.addEventListener('click', (e) => {
-        const card = e.target.closest('.card');
-        if (!card) return;
-
-        const folder = card.dataset.folder;  // 比如 "Anime/Frieren"
-        if (!folder) return;
-
-        jumpToFileManager(folder);
+      // Filter for valid image extensions
+      const imageExts = ['.jpg', '.jpeg', '.png', '.webp', '.gif'];
+      const items = (data.items || []).filter(it => {
+        if (it.is_dir) return false;
+        const lower = it.name.toLowerCase();
+        return imageExts.some(ext => lower.endsWith(ext));
       });
-    }
 
-    if (moviesGrid) {
-      moviesGrid.addEventListener('click', (e) => {
-        const card = e.target.closest('.card');
-        if (!card) return;
+      // Map to frontend structure
+      photoSeed = items.map(it => ({
+        title: it.name,
+        // Construct static media URL
+        src: `${API_ROOT}/static_media/Photos/${encodeURIComponent(it.name)}`,
+      }));
 
-        const folder = card.dataset.folder;  // 比如 "Movies/Inception"
-        if (!folder) return;
-
-        jumpToFileManager(folder);
-      });
-    }
-
-
-    // 把后端返回的时间字符串格式化一下，只保留到秒
-    function formatModified(value) {
-      if (!value) return '';
-
-      // FastAPI 默认是 "2025-11-18T15:06:13.604660" 这种
-      const str = String(value);
-      const [datePart, timePartRaw] = str.split('T');
-      if (!timePartRaw) return str;
-
-      const timePart = timePartRaw.slice(0, 8); // HH:MM:SS
-
-      // 如果你真的只想显示时间，可以 return timePart;
-      // 现在我给你日期 + 时间，看起来更正常：
-      return `${datePart} ${timePart}`;
-    }
-
-    // 把字节数格式化成人类可读的形式
-    function formatSize(bytes, isDir) {
-      if (bytes == null) return '—';
-
-      // 文件夹这一步如果要算总大小就得后端递归，非常吃性能，
-      // 先统一显示 "—"，文件显示真实大小
-      if (isDir) return '—';
-
-      const b = Number(bytes);
-      if (!isFinite(b) || b < 0) return '—';
-      if (b === 0) return '0 B';
-
-      const units = ['B', 'KB', 'MB', 'GB', 'TB'];
-      let size = b;
-      let unit = 0;
-      while (size >= 1024 && unit < units.length - 1) {
-        size /= 1024;
-        unit++;
+      renderPhotos();
+    } catch (err) {
+      console.error(err);
+      if (photoSeed.length === 0) {
+        photoSeed = [];
       }
-
-      // 小于 10 的保留 1 位小数，大于 10 取整
-      const fixed = size >= 10 || unit === 0 ? size.toFixed(0) : size.toFixed(1);
-      return `${fixed} ${units[unit]}`;
+      renderPhotos();
     }
-    
-    function renderFiles(items) {
-      const table = document.getElementById('fileTableBody');
-      if (!table) return;
+  }
 
-      table.innerHTML = '';
+  // Photo Preview Event Listeners
+  if (photosGrid && photoOverlay && photoOverlayImg) {
+    // Click on thumbnail -> Open preview
+    photosGrid.addEventListener('click', (e) => {
+      const cell = e.target.closest('.thumb-square');
+      if (!cell) return;
 
-      if (!items || items.length === 0) {
-        table.innerHTML = `
+      const img = cell.querySelector('img');
+      if (!img) return;
+
+      openPhotoPreview(img.src, img.alt || '');
+    });
+
+    // Click overlay background or close button -> Close
+    photoOverlay.addEventListener('click', (e) => {
+      if (e.target === photoOverlay || e.target.closest('.photo-overlay-close')) {
+        photoOverlay.classList.remove('active');
+        photoOverlayImg.src = '';
+      }
+    });
+
+    // ESC key -> Close
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && photoOverlay.classList.contains('active')) {
+        photoOverlay.classList.remove('active');
+        photoOverlayImg.src = '';
+      }
+    });
+  }
+
+  // =====================================================
+  // Navigation Handling (Clicking Cards)
+  // =====================================================
+
+  if (animeGrid) {
+    animeGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (!card) return;
+      const folder = card.dataset.folder;  // e.g., "Anime/Frieren"
+      if (folder) jumpToFileManager(folder);
+    });
+  }
+
+  if (moviesGrid) {
+    moviesGrid.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (!card) return;
+      const folder = card.dataset.folder;  // e.g., "Movies/Inception"
+      if (folder) jumpToFileManager(folder);
+    });
+  }
+
+  // =====================================================
+  // Utility Functions
+  // =====================================================
+
+  // Format ISO datetime string to readable format (YYYY-MM-DD HH:MM:SS)
+  function formatModified(value) {
+    if (!value) return '';
+    const str = String(value);
+    const [datePart, timePartRaw] = str.split('T');
+    if (!timePartRaw) return str;
+    const timePart = timePartRaw.slice(0, 8); // Extract HH:MM:SS
+    return `${datePart} ${timePart}`;
+  }
+
+  // Format bytes to readable size (KB, MB, GB)
+  function formatSize(bytes, isDir) {
+    if (bytes == null) return '—';
+    if (isDir) return '—'; // Directories don't show size to save performance
+
+    const b = Number(bytes);
+    if (!isFinite(b) || b < 0) return '—';
+    if (b === 0) return '0 B';
+
+    const units = ['B', 'KB', 'MB', 'GB', 'TB'];
+    let size = b;
+    let unit = 0;
+    while (size >= 1024 && unit < units.length - 1) {
+      size /= 1024;
+      unit++;
+    }
+
+    const fixed = size >= 10 || unit === 0 ? size.toFixed(0) : size.toFixed(1);
+    return `${fixed} ${units[unit]}`;
+  }
+
+  // Render the File Manager table rows
+  function renderFiles(items) {
+    const table = document.getElementById('fileTableBody');
+    if (!table) return;
+
+    table.innerHTML = '';
+
+    if (!items || items.length === 0) {
+      table.innerHTML = `
           <div class="fm-row">
-            <div class="fm-cell" colspan="5" style="opacity:0.7">MT</div>
+            <div class="fm-cell" colspan="5" style="opacity:0.7">Empty Folder</div>
           </div>
         `;
-        return;
-      }
+      return;
+    }
 
-      const rowsHtml = items.map(it => {
-        const icon = it.is_dir ? '📁' : '📄';
-        const type = it.is_dir ? 'Folder' : (it.extension || 'File');
+    const rowsHtml = items.map(it => {
+      const icon = it.is_dir ? '📁' : '📄';
+      const type = it.is_dir ? 'Folder' : (it.extension || 'File');
+      const modified = formatModified(it.modified);
+      const size     = formatSize(it.size, it.is_dir);
 
-        const modified = formatModified(it.modified);
-        const size     = formatSize(it.size, it.is_dir);
-
-        return `
-          <div class="fm-row" 
-              data-name="${it.name}" 
+      return `
+          <div class="fm-row"
+              data-name="${it.name}"
               data-is-dir="${it.is_dir}">
             <div class="fm-cell">${icon}</div>
             <div class="fm-cell fm-name">${it.name}</div>
@@ -822,624 +787,576 @@
             <div class="fm-cell hide-sm">${size}</div>
           </div>
         `;
-      }).join('');
+    }).join('');
 
-      table.innerHTML = rowsHtml;
+    table.innerHTML = rowsHtml;
 
-      // 更新上面的路径显示
-      if (fmPathEl) {
-        const display = currentPath === '.' ? 'Media' : `Media / ${currentPath}`;
-        fmPathEl.textContent = display;
-      }
+    // Update Breadcrumb Path
+    if (fmPathEl) {
+      const display = currentPath === '.' ? 'Media' : `Media / ${currentPath}`;
+      fmPathEl.textContent = display;
     }
+  }
 
-    function handleFileTableDblclick(e) {
-      const row = e.target.closest('.fm-row');
-      if (!row || !row.dataset.name) return;
+  // Handle Double Click on File Rows
+  function handleFileTableDblclick(e) {
+    const row = e.target.closest('.fm-row');
+    if (!row || !row.dataset.name) return;
 
-      const name = row.dataset.name;
-      const isDir = row.dataset.isDir === 'true';
-      const relPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+    const name = row.dataset.name;
+    const isDir = row.dataset.isDir === 'true';
+    const relPath = currentPath === '.' ? name : `${currentPath}/${name}`;
 
-      if (isDir) {
-        // 双击文件夹 = 进入
-        loadFilesFromApi(relPath);
+    if (isDir) {
+      // Double click folder -> Enter directory
+      loadFilesFromApi(relPath);
+    } else {
+      // Double click file -> Open (Preview or Download)
+      const url = buildStaticMediaUrl(relPath);
+
+      if (isImageFile(name)) {
+        openPhotoPreview(url, name);
       } else {
-        // 双击文件 = 打开（图片预览，其它下载/新标签）
-        const url = buildStaticMediaUrl(relPath);
-
-        if (isImageFile(name)) {
-          openPhotoPreview(url, name);
-        } else {
-          window.open(url, '_blank');
-        }
+        window.open(url, '_blank');
       }
     }
+  }
 
+  function openPhotoPreview(url, altText = '') {
+    if (!photoOverlay || !photoOverlayImg) return;
+    photoOverlayImg.src = url;
+    photoOverlayImg.alt = altText || '';
+    photoOverlay.classList.add('active');
+  }
 
-    function openPhotoPreview(url, altText = '') {
-      if (!photoOverlay || !photoOverlayImg) return;
-      photoOverlayImg.src = url;
-      photoOverlayImg.alt = altText || '';
-      photoOverlay.classList.add('active');
+  function isImageFile(name) {
+    const lower = String(name || '').toLowerCase();
+    return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg']
+            .some(ext => lower.endsWith(ext));
+  }
+
+  // Convert relative path to static media URL
+  function buildStaticMediaUrl(relPath) {
+    const safe = (relPath || '')
+            .split('/')
+            .map(encodeURIComponent)
+            .join('/');
+    return `${API_ROOT}/static_media/${safe}`;
+  }
+
+  // =====================================================
+  // Search Logic
+  // =====================================================
+  const searchBox = document.getElementById('searchBox');
+  const searchBtn = document.getElementById('addBtn');
+
+  function applySearch() {
+    if (!searchBox) return;
+    const raw = searchBox.value || '';
+    const q = raw.trim().toLowerCase();
+    const view = document.body.dataset.view || 'anime';
+
+    // Empty search -> Reset to full list
+    if (!q) {
+      if (view === 'anime') renderAnime();
+      else if (view === 'movies') renderMovies();
+      else if (view === 'photos') renderPhotos();
+      else if (view === 'files') renderFiles(currentFileItems);
+      return;
     }
 
-    function isImageFile(name) {
-      const lower = String(name || '').toLowerCase();
-      return ['.jpg', '.jpeg', '.png', '.gif', '.webp', '.bmp', '.svg']
-        .some(ext => lower.endsWith(ext));
-    }
-
-    function buildStaticMediaUrl(relPath) {
-      const safe = String(relPath || '')
-        .split('/')
-        .map(encodeURIComponent)
-        .join('/');
-      return `${API_ROOT}/static_media/${safe}`;
-    }
-
-    // 把相对路径变成 /static_media 的 URL
-    function buildStaticMediaUrl(relPath) {
-      // relPath 例如: "Anime/Frieren/xxx.mkv" 或 "test.txt"
-      const safe = (relPath || '')
-        .split('/')
-        .map(encodeURIComponent)   // 每一段分别编码，防止空格/中文炸掉
-        .join('/');
-
-      return `${API_ROOT}/static_media/${safe}`;
-    }
-
-
-    const searchBox = document.getElementById('searchBox');
-    const searchBtn = document.getElementById('addBtn');
-
-    function applySearch() {
-      if (!searchBox) return;
-      const raw = searchBox.value || '';
-      const q = raw.trim().toLowerCase();
-
-      // 当前视图：anime / movies / photos / files
-      const view = document.body.dataset.view || 'anime';
-
-      // 如果搜索框是空的 -> 恢复原始视图
-      if (!q) {
-        if (view === 'anime') {
-          renderAnime();                 // 用 animeSeed
-        } else if (view === 'movies') {
-          renderMovies();
-        } else if (view === 'photos') {
-          renderPhotos();
-        } else if (view === 'files') {
-          renderFiles(currentFileItems); // 用完整文件列表
-        }
-        return;
-      }
-
-      // 各个视图的过滤逻辑（大小写不敏感）
-      if (view === 'anime') {
-        const filtered = animeSeed.filter(item =>
-          item.title.toLowerCase().includes(q)
-        );
-        renderAnime(filtered);
-      } else if (view === 'movies') {
-        const filtered = movieSeed.filter(item =>
-          item.title.toLowerCase().includes(q)
-        );
-        renderMovies(filtered);
-      } else if (view === 'photos') {
-        const filtered = photoSeed.filter(item =>
-          item.title.toLowerCase().includes(q)
-        );
-        renderPhotos(filtered);
-      } else if (view === 'files') {
-        const filtered = currentFileItems.filter(it => {
-          const name = (it.name || '').toLowerCase();
-          const type = it.is_dir
-            ? 'folder'
-            : (it.extension || '').toLowerCase();
-
-          // 你也可以只按 name 过滤，这里顺便把类型也算上
-          return name.includes(q) || type.includes(q);
-        });
-        renderFiles(filtered);
-      }
-    }
-
-    // 绑定搜索按钮和回车键
-    if (searchBtn) {
-      searchBtn.addEventListener('click', applySearch);
-    }
-    if (searchBox) {
-      searchBox.addEventListener('keydown', (e) => {
-        if (e.key === 'Enter') applySearch();
+    // Filter logic per view
+    if (view === 'anime') {
+      const filtered = animeSeed.filter(item => item.title.toLowerCase().includes(q));
+      renderAnime(filtered);
+    } else if (view === 'movies') {
+      const filtered = movieSeed.filter(item => item.title.toLowerCase().includes(q));
+      renderMovies(filtered);
+    } else if (view === 'photos') {
+      const filtered = photoSeed.filter(item => item.title.toLowerCase().includes(q));
+      renderPhotos(filtered);
+    } else if (view === 'files') {
+      const filtered = currentFileItems.filter(it => {
+        const name = (it.name || '').toLowerCase();
+        return name.includes(q);
       });
+      renderFiles(filtered);
     }
+  }
 
-    async function loadFilesFromApi(path = '.') {
-      try {
-        currentPath = path;
+  if (searchBtn) searchBtn.addEventListener('click', applySearch);
+  if (searchBox) {
+    searchBox.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') applySearch();
+    });
+  }
 
-        const url = path === '.' 
-          ? `${API_FILES}/browse`
-          : `${API_FILES}/browse?path=${encodeURIComponent(path)}`;
+  // =====================================================
+  // File Manager Data Fetching
+  // =====================================================
+  async function loadFilesFromApi(path = '.') {
+    try {
+      currentPath = path;
 
-        const res = await fetch(url);
-        if (!res.ok) {
-          throw new Error(`Failed to browse files: ${res.status}`);
-        }
+      const url = path === '.'
+              ? `${API_FILES}/browse`
+              : `${API_FILES}/browse?path=${encodeURIComponent(path)}`;
 
-        const data = await res.json();
-        const items = data.items || data.files || [];
-
-        currentFileItems = items;   // ⭐ 存一份当前目录完整列表
-        renderFiles(items);
-        filesLoadedOnce = true;
-      } catch (err) {
-        console.error(err);
-        alert('从 NAS 加载文件列表失败');
-      }
-    }
-
-    function jumpToFileManager(targetPath) {
-      // 1. 先切到 File Manager 视图（复用左侧导航的逻辑）
-      const filesBtn = nav.querySelector('button[data-target="files"]');
-      if (filesBtn) {
-        filesBtn.click();   // 这会触发原本的视图切换逻辑
+      const res = await fetch(url);
+      if (!res.ok) {
+        throw new Error(`Failed to browse files: ${res.status}`);
       }
 
-      // 2. 然后加载目标路径
-      //    nav 的点击里会在第一次进入 File Manager 时自动加载一次根目录，
-      //    这里再加载我们真正想要的目录即可。
-      loadFilesFromApi(targetPath);
+      const data = await res.json();
+      const items = data.items || data.files || [];
+
+      currentFileItems = items;   // Cache for search functionality
+      renderFiles(items);
+      filesLoadedOnce = true;
+    } catch (err) {
+      console.error(err);
+      alert('Failed to load file list from NAS.');
     }
+  }
 
+  function jumpToFileManager(targetPath) {
+    // 1. Switch view to File Manager
+    const filesBtn = nav.querySelector('button[data-target="files"]');
+    if (filesBtn) filesBtn.click();
 
-    // 回退到上一级目录
-    function goUpOneLevel() {
-      if (currentPath === '.') {
-        // 已经在根目录了，不能再退
-        return;
-      }
+    // 2. Load the target path
+    loadFilesFromApi(targetPath);
+  }
 
-      const parts = currentPath.split('/');
-      parts.pop(); // 去掉最后一级
-      const parent = parts.length ? parts.join('/') : '.';
+  // Handle "Back" button logic
+  function goUpOneLevel() {
+    if (currentPath === '.') return; // Already at root
 
-      loadFilesFromApi(parent);
-    }
+    const parts = currentPath.split('/');
+    parts.pop();
+    const parent = parts.length ? parts.join('/') : '.';
 
-    // 绑定回退按钮
-    const fmBackBtn = document.getElementById('fmBackBtn');
-    if (fmBackBtn) {
-      fmBackBtn.addEventListener('click', () => {
-        goUpOneLevel();
-      });
-    }
+    loadFilesFromApi(parent);
+  }
 
+  const fmBackBtn = document.getElementById('fmBackBtn');
+  if (fmBackBtn) {
+    fmBackBtn.addEventListener('click', () => goUpOneLevel());
+  }
 
-    // 让 File Manager 里的行可以点击：点文件夹就进入下一层
-    document.addEventListener('click', (event) => {
-      const table = document.getElementById('fmTable');
-      if (!table) return;
+  // Handle Single Click navigation in File Manager
+  document.addEventListener('click', (event) => {
+    const table = document.getElementById('fmTable');
+    if (!table || !table.contains(event.target)) return;
 
-      // 只处理 File Manager 里的点击
-      if (!table.contains(event.target)) return;
+    const row = event.target.closest('.fm-row');
+    if (!row) return;
 
-      const row = event.target.closest('.fm-row');
-      if (!row) return;
+    const name = row.dataset.name;
+    const isDir = row.dataset.isDir === 'true';
 
-      const name = row.dataset.name;
-      const isDir = row.dataset.isDir === 'true';
+    if (!name || !isDir) return;
 
-      // header 行没有 data-name，或者是文件就先不处理
-      if (!name || !isDir) return;
+    const newPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+    loadFilesFromApi(newPath);
+  });
 
-      // 计算新路径：根目录 '.' 加子目录，或在已有路径后面追加
-      const newPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+  // =====================================================
+  // Sidebar Navigation Logic
+  // =====================================================
+  nav.addEventListener('click', (e) => {
+    const btn = e.target.closest('button[data-target]');
+    if (!btn) return;
+    const target = btn.getAttribute('data-target');
 
-      loadFilesFromApi(newPath);
+    // 1. Toggle active state
+    [...nav.querySelectorAll('button')].forEach(b =>
+            b.classList.toggle('active', b === btn)
+    );
+
+    // 2. Toggle views
+    Object.entries(views).forEach(([key, el]) => {
+      el.hidden = key !== target;
     });
 
+    // 3. Update dataset state
+    document.body.dataset.view = target;
 
-    // 让 File Manager 里的行可以点击：点文件夹就进入下一层
-    nav.addEventListener('click', (e) => {
-      const btn = e.target.closest('button[data-target]');
-      if (!btn) return;
-      const target = btn.getAttribute('data-target');
+    // 4. Update Title
+    const mapping = {
+      anime: 'Anime',
+      movies: 'Movies',
+      photos: 'Photo Library',
+      files: 'File Manager'
+    };
+    title.textContent = mapping[target] || 'Home Cloud';
 
-      // 1. 切换左侧按钮 active 状态
-      [...nav.querySelectorAll('button')].forEach(b =>
-        b.classList.toggle('active', b === btn)
-      );
-
-      // 2. 切换显示/隐藏视图
-      Object.entries(views).forEach(([key, el]) => {
-        el.hidden = key !== target;
-      });
-
-      // 3. 记录当前视图
-      document.body.dataset.view = target;
-
-      // 4. 切换顶部标题
-      const mapping = { 
-        anime: 'Anime', 
-        movies: 'Movies', 
-        photos: 'Photo Library', 
-        files: 'File Manager' 
-      };
-      title.textContent = mapping[target] || 'Home Cloud';
-
-      // 5. 🚀 如果是第一次进入 File Manager，则加载根目录
-      if (target === 'files' && !filesLoadedOnce) {
-        loadFilesFromApi('.');   // 加载根目录
-        filesLoadedOnce = true;  // 防止重复加载
-      }
-
-      // 6. 切换视图时清空搜索内容
-      if (searchBox) searchBox.value = '';
-
-      // 7.（可选）切到某个视图的时候，用完整数据重渲染一遍
-      if (target === 'anime') renderAnime();
-      if (target === 'movies') renderMovies();
-      if (target === 'photos') renderPhotos();
-      if (target === 'files' && currentFileItems.length) {
-        renderFiles(currentFileItems);
-      }
-    });
-
-    // 新建文件夹
-    if (btnNewFolder) {
-      btnNewFolder.addEventListener('click', async () => {
-        const name = prompt('请输入新文件夹名称：');
-        if (!name) return;
-
-        const folderName = name.trim();
-        if (!folderName) return;
-
-        const payload = {
-          path: currentPath || '.',      // 根目录就是 '.'
-          folder_name: folderName,
-        };
-
-        try {
-          const res = await fetch(`${API_FILES}/mkdir`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify(payload),
-          });
-
-          if (!res.ok) {
-            let errMsg = `创建文件夹失败：${res.status}`;
-            try {
-              const errJson = await res.json();
-              if (errJson.detail) errMsg = errJson.detail;
-            } catch (_) {}
-            alert(errMsg);
-            return;
-          }
-
-          // 成功后刷新当前目录
-          await res.json();
-          await loadFilesFromApi(currentPath);
-        } catch (err) {
-          console.error(err);
-          alert('创建文件夹时出现错误（可能是网络或后端问题）');
-        }
-      });
+    // 5. Load files if accessing File Manager for the first time
+    if (target === 'files' && !filesLoadedOnce) {
+      loadFilesFromApi('.');
+      filesLoadedOnce = true;
     }
 
-    // 上传文件
-    if (btnUpload && fmUploadInput) {
-      // 点击按钮 -> 打开文件选择器
-      btnUpload.addEventListener('click', () => {
-        fmUploadInput.value = ''; // 清空上次选择
-        fmUploadInput.click();
-      });
+    // 6. Reset search
+    if (searchBox) searchBox.value = '';
 
-      // 选完文件 -> 一次性把所有文件作为 "files" 传上去
-      fmUploadInput.addEventListener('change', async () => {
-        const files = Array.from(fmUploadInput.files || []);
-        if (!files.length) return;
-
-        const formData = new FormData();
-
-        // 和后端对齐：字段名叫 "files"
-        for (const file of files) {
-          formData.append('files', file);
-        }
-
-        // 路径字段叫 path，根目录用 "."
-        formData.append('path', currentPath || '.');
-
-        try {
-          const res = await fetch(`${API_FILES}/upload`, {
-            method: 'POST',
-            body: formData,
-          });
-
-          if (!res.ok) {
-            let errMsg = `上传失败：${res.status}`;
-            try {
-              const errJson = await res.json();
-              console.log('upload error json:', errJson);
-              if (Array.isArray(errJson.detail)) {
-                errMsg = errJson.detail.map(d => `${d.loc?.join('.')}: ${d.msg}`).join('; ');
-              } else if (typeof errJson.detail === 'string') {
-                errMsg = errJson.detail;
-              }
-            } catch (_) {}
-            alert(`上传失败：${errMsg}`);
-          } else {
-            await res.json(); // 用不到内容就丢掉没关系
-          }
-        } catch (err) {
-          console.error(err);
-          alert(`上传文件时出现错误`);
-        }
-
-        // 所有文件处理完，再刷新当前目录
-        await loadFilesFromApi(currentPath);
-      });
+    // 7. Refresh data when switching views
+    if (target === 'anime') renderAnime();
+    if (target === 'movies') renderMovies();
+    if (target === 'photos') renderPhotos();
+    if (target === 'files' && currentFileItems.length) {
+      renderFiles(currentFileItems);
     }
+  });
 
+  // =====================================================
+  // File Manager Actions (New Folder, Upload)
+  // =====================================================
 
-    // Initial paint
-    window.addEventListener('DOMContentLoaded', () => {
-      loadAnimeFromApi();
-      loadMoviesFromApi();
-      loadPhotosFromApi();  // ✅ 用 NAS 真数据
+  // New Folder
+  if (btnNewFolder) {
+    btnNewFolder.addEventListener('click', async () => {
+      const name = prompt('Enter new folder name:');
+      if (!name) return;
 
-      const fileTableBody = document.getElementById('fileTableBody');
-        if (fileTableBody) {
-          fileTableBody.addEventListener('dblclick', handleFileTableDblclick);
-        }
-    });
-
-    // =========================
-    // File Manager 右键菜单逻辑
-    // =========================
-
-    function setMenuItemDisabled(action, disabled) {
-      if (!fmMenu) return;
-      const li = fmMenu.querySelector(`li[data-action="${action}"]`);
-      if (!li) return;
-      if (disabled) li.classList.add('disabled');
-      else li.classList.remove('disabled');
-    }
-
-    function updateContextMenuState() {
-      const hasEntry = fmContextTarget && fmContextTarget.type === 'entry';
-      const hasClipboard = !!fmClipboard;
-
-      setMenuItemDisabled('open',   !hasEntry);
-      setMenuItemDisabled('copy',   !hasEntry);
-      setMenuItemDisabled('cut',    !hasEntry);
-      setMenuItemDisabled('delete', !hasEntry);
-      setMenuItemDisabled('paste',  !hasClipboard);
-    }
-
-    function showContextMenu(x, y, targetInfo) {
-      if (!fmMenu) return;
-      fmContextTarget = targetInfo;
-      updateContextMenuState();
-
-      fmMenu.style.display = 'block';
-      fmMenu.style.left = x + 'px';
-      fmMenu.style.top  = y + 'px';
-
-      // 防止溢出屏幕
-      const rect = fmMenu.getBoundingClientRect();
-      const vw = window.innerWidth;
-      const vh = window.innerHeight;
-      if (rect.right > vw) {
-        fmMenu.style.left = (vw - rect.width - 8) + 'px';
-      }
-      if (rect.bottom > vh) {
-        fmMenu.style.top = (vh - rect.height - 8) + 'px';
-      }
-    }
-
-    function hideContextMenu() {
-      if (fmMenu) fmMenu.style.display = 'none';
-    }
-
-    // 在整个 File Manager 面板上监听右键
-    if (fmPanel) {
-      fmPanel.addEventListener('contextmenu', (e) => {
-        if (fmMenu && fmMenu.contains(e.target)) return;
-        e.preventDefault();
-
-        let targetInfo;
-        const isInTable = fmTable && fmTable.contains(e.target);
-        const row = isInTable ? e.target.closest('.fm-row') : null;
-
-        if (row && row.dataset.name) {
-          const name = row.dataset.name;
-          const isDir = row.dataset.isDir === 'true';
-          const fullPath = currentPath === '.' ? name : `${currentPath}/${name}`;
-
-          targetInfo = {
-            type: 'entry',
-            name,
-            isDir,
-            path: fullPath,
-          };
-        } else {
-          targetInfo = {
-            type: 'blank',
-            path: currentPath || '.',
-          };
-        }
-
-        showContextMenu(e.clientX, e.clientY, targetInfo);
-      });
-    }
-
-    // 点击别处 / 滚动 / Esc 关闭菜单
-    document.addEventListener('click', (e) => {
-      if (!fmMenu) return;
-      if (!fmMenu.contains(e.target)) hideContextMenu();
-    });
-    document.addEventListener('scroll', hideContextMenu, true);
-    window.addEventListener('resize', hideContextMenu);
-    document.addEventListener('keydown', (e) => {
-      if (e.key === 'Escape') hideContextMenu();
-    });
-
-    // 菜单点击分发
-    if (fmMenu) {
-      fmMenu.addEventListener('click', async (e) => {
-        const li = e.target.closest('li[data-action]');
-        if (!li || li.classList.contains('disabled')) return;
-
-        const action = li.dataset.action;
-        hideContextMenu();
-
-        switch (action) {
-          case 'open':
-            await handleFmOpen();
-            break;
-          case 'copy':
-            handleFmCopy(false);
-            break;
-          case 'cut':
-            handleFmCopy(true);
-            break;
-          case 'paste':
-            await handleFmPaste();
-            break;
-          case 'delete':
-            await handleFmDelete();
-            break;
-        }
-      });
-    }
-
-    // ========= 具体操作 =========
-
-    // Open：文件夹进入；文件用静态地址在新标签页打开
-    async function handleFmOpen() {
-      if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
-
-      const { name, isDir, path } = fmContextTarget;
-
-      if (isDir) {
-        const newPath = currentPath === '.' ? name : `${currentPath}/${name}`;
-        await loadFilesFromApi(newPath);
-      } else {
-        // 计算相对路径
-        const relPath = path || (currentPath === '.' ? name : `${currentPath}/${name}`);
-        const fileUrl = buildStaticMediaUrl(relPath);
-
-        if (isImageFile(name)) {
-          // 图片：用和 Photos 一样的遮罩预览
-          openPhotoPreview(fileUrl, name);
-        } else {
-          // 其他类型：先保持用浏览器打开/下载
-          window.open(fileUrl, '_blank');
-        }
-      }
-    }
-
-
-    // Copy / Cut：填充剪贴板
-    function handleFmCopy(isCut) {
-      if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
-
-      fmClipboard = {
-        mode: isCut ? 'cut' : 'copy',
-        fromPath: currentPath || '.',
-        name: fmContextTarget.name,
-        isDir: fmContextTarget.isDir,
-      };
-
-      updateContextMenuState();
-    }
-
-    // Paste：调用后端 /move_copy
-    async function handleFmPaste() {
-      if (!fmClipboard) return;
-
-      const payload = {
-        src_path: fmClipboard.fromPath,
-        dst_path: currentPath || '.',
-        name: fmClipboard.name,
-        is_dir: fmClipboard.isDir,
-        mode: fmClipboard.mode,       // 'copy' or 'cut'
-      };
-
-      try {
-        const res = await fetch(`${API_FILES}/move_copy`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload),
-        });
-
-        if (!res.ok) {
-          let msg = `粘贴失败：${res.status}`;
-          try {
-            const data = await res.json();
-            if (data.detail) msg = data.detail;
-          } catch (_) {}
-          alert(msg);
-          return;
-        }
-
-        if (fmClipboard.mode === 'cut') {
-          fmClipboard = null; // 剪切成功后清空剪贴板
-        }
-
-        await loadFilesFromApi(currentPath);
-      } catch (err) {
-        console.error(err);
-        alert('粘贴时发生错误');
-      } finally {
-        updateContextMenuState();
-      }
-    }
-
-    // Delete：调用后端 /delete
-    async function handleFmDelete() {
-      if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
-
-      const { name, isDir } = fmContextTarget;
-      const text = isDir
-        ? `确定要删除文件夹 "${name}" 及其所有内容吗？`
-        : `确定要删除文件 "${name}" 吗？`;
-      if (!confirm(text)) return;
+      const folderName = name.trim();
+      if (!folderName) return;
 
       const payload = {
         path: currentPath || '.',
-        name,
-        is_dir: isDir,
+        folder_name: folderName,
       };
 
       try {
-        const res = await fetch(`${API_FILES}/delete`, {
+        const res = await fetch(`${API_FILES}/mkdir`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
 
         if (!res.ok) {
-          let msg = `删除失败：${res.status}`;
+          let errMsg = `Failed to create folder: ${res.status}`;
           try {
-            const data = await res.json();
-            if (data.detail) msg = data.detail;
+            const errJson = await res.json();
+            if (errJson.detail) errMsg = errJson.detail;
           } catch (_) {}
-          alert(msg);
+          alert(errMsg);
           return;
         }
 
+        // Refresh directory
+        await res.json();
         await loadFilesFromApi(currentPath);
       } catch (err) {
         console.error(err);
-        alert('删除时发生错误');
+        alert('Error creating folder.');
+      }
+    });
+  }
+
+  // File Upload
+  if (btnUpload && fmUploadInput) {
+    btnUpload.addEventListener('click', () => {
+      fmUploadInput.value = '';
+      fmUploadInput.click();
+    });
+
+    fmUploadInput.addEventListener('change', async () => {
+      const files = Array.from(fmUploadInput.files || []);
+      if (!files.length) return;
+
+      const formData = new FormData();
+
+      // Append files
+      for (const file of files) {
+        formData.append('files', file);
+      }
+      // Append path
+      formData.append('path', currentPath || '.');
+
+      try {
+        const res = await fetch(`${API_FILES}/upload`, {
+          method: 'POST',
+          body: formData,
+        });
+
+        if (!res.ok) {
+          let errMsg = `Upload failed: ${res.status}`;
+          try {
+            const errJson = await res.json();
+            if (Array.isArray(errJson.detail)) {
+              errMsg = errJson.detail.map(d => `${d.loc?.join('.')}: ${d.msg}`).join('; ');
+            } else if (typeof errJson.detail === 'string') {
+              errMsg = errJson.detail;
+            }
+          } catch (_) {}
+          alert(errMsg);
+        } else {
+          await res.json();
+        }
+      } catch (err) {
+        console.error(err);
+        alert(`Error during upload.`);
+      }
+
+      // Refresh directory after upload
+      await loadFilesFromApi(currentPath);
+    });
+  }
+
+  // =====================================================
+  // Initialization
+  // =====================================================
+  window.addEventListener('DOMContentLoaded', () => {
+    loadAnimeFromApi();
+    loadMoviesFromApi();
+    loadPhotosFromApi();
+
+    const fileTableBody = document.getElementById('fileTableBody');
+    if (fileTableBody) {
+      fileTableBody.addEventListener('dblclick', handleFileTableDblclick);
+    }
+  });
+
+  // =====================================================
+  // Context Menu Logic
+  // =====================================================
+
+  function setMenuItemDisabled(action, disabled) {
+    if (!fmMenu) return;
+    const li = fmMenu.querySelector(`li[data-action="${action}"]`);
+    if (!li) return;
+    if (disabled) li.classList.add('disabled');
+    else li.classList.remove('disabled');
+  }
+
+  function updateContextMenuState() {
+    const hasEntry = fmContextTarget && fmContextTarget.type === 'entry';
+    const hasClipboard = !!fmClipboard;
+
+    setMenuItemDisabled('open',   !hasEntry);
+    setMenuItemDisabled('copy',   !hasEntry);
+    setMenuItemDisabled('cut',    !hasEntry);
+    setMenuItemDisabled('delete', !hasEntry);
+    setMenuItemDisabled('paste',  !hasClipboard);
+  }
+
+  function showContextMenu(x, y, targetInfo) {
+    if (!fmMenu) return;
+    fmContextTarget = targetInfo;
+    updateContextMenuState();
+
+    fmMenu.style.display = 'block';
+    fmMenu.style.left = x + 'px';
+    fmMenu.style.top  = y + 'px';
+
+    // Adjust position if overflowing screen
+    const rect = fmMenu.getBoundingClientRect();
+    const vw = window.innerWidth;
+    const vh = window.innerHeight;
+    if (rect.right > vw) {
+      fmMenu.style.left = (vw - rect.width - 8) + 'px';
+    }
+    if (rect.bottom > vh) {
+      fmMenu.style.top = (vh - rect.height - 8) + 'px';
+    }
+  }
+
+  function hideContextMenu() {
+    if (fmMenu) fmMenu.style.display = 'none';
+  }
+
+  // Listen for right-click on File Manager
+  if (fmPanel) {
+    fmPanel.addEventListener('contextmenu', (e) => {
+      if (fmMenu && fmMenu.contains(e.target)) return;
+      e.preventDefault();
+
+      let targetInfo;
+      const isInTable = fmTable && fmTable.contains(e.target);
+      const row = isInTable ? e.target.closest('.fm-row') : null;
+
+      if (row && row.dataset.name) {
+        const name = row.dataset.name;
+        const isDir = row.dataset.isDir === 'true';
+        const fullPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+
+        targetInfo = {
+          type: 'entry',
+          name,
+          isDir,
+          path: fullPath,
+        };
+      } else {
+        targetInfo = {
+          type: 'blank',
+          path: currentPath || '.',
+        };
+      }
+
+      showContextMenu(e.clientX, e.clientY, targetInfo);
+    });
+  }
+
+  // Close menu interactions
+  document.addEventListener('click', (e) => {
+    if (!fmMenu) return;
+    if (!fmMenu.contains(e.target)) hideContextMenu();
+  });
+  document.addEventListener('scroll', hideContextMenu, true);
+  window.addEventListener('resize', hideContextMenu);
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape') hideContextMenu();
+  });
+
+  // Handle Menu Actions
+  if (fmMenu) {
+    fmMenu.addEventListener('click', async (e) => {
+      const li = e.target.closest('li[data-action]');
+      if (!li || li.classList.contains('disabled')) return;
+
+      const action = li.dataset.action;
+      hideContextMenu();
+
+      switch (action) {
+        case 'open':
+          await handleFmOpen();
+          break;
+        case 'copy':
+          handleFmCopy(false);
+          break;
+        case 'cut':
+          handleFmCopy(true);
+          break;
+        case 'paste':
+          await handleFmPaste();
+          break;
+        case 'delete':
+          await handleFmDelete();
+          break;
+      }
+    });
+  }
+
+  // ========= Action Handlers =========
+
+  // Open: Enter folder or open file
+  async function handleFmOpen() {
+    if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
+
+    const { name, isDir, path } = fmContextTarget;
+
+    if (isDir) {
+      const newPath = currentPath === '.' ? name : `${currentPath}/${name}`;
+      await loadFilesFromApi(newPath);
+    } else {
+      const relPath = path || (currentPath === '.' ? name : `${currentPath}/${name}`);
+      const fileUrl = buildStaticMediaUrl(relPath);
+
+      if (isImageFile(name)) {
+        openPhotoPreview(fileUrl, name);
+      } else {
+        window.open(fileUrl, '_blank');
       }
     }
+  }
 
-  </script>
+  // Copy / Cut: Set clipboard state
+  function handleFmCopy(isCut) {
+    if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
+
+    fmClipboard = {
+      mode: isCut ? 'cut' : 'copy',
+      fromPath: currentPath || '.',
+      name: fmContextTarget.name,
+      isDir: fmContextTarget.isDir,
+    };
+
+    updateContextMenuState();
+  }
+
+  // Paste: Call backend /move_copy API
+  async function handleFmPaste() {
+    if (!fmClipboard) return;
+
+    const payload = {
+      src_path: fmClipboard.fromPath,
+      dst_path: currentPath || '.',
+      name: fmClipboard.name,
+      is_dir: fmClipboard.isDir,
+      mode: fmClipboard.mode,       // 'copy' or 'cut'
+    };
+
+    try {
+      const res = await fetch(`${API_FILES}/move_copy`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        let msg = `Paste failed: ${res.status}`;
+        try {
+          const data = await res.json();
+          if (data.detail) msg = data.detail;
+        } catch (_) {}
+        alert(msg);
+        return;
+      }
+
+      if (fmClipboard.mode === 'cut') {
+        fmClipboard = null; // Clear clipboard after cut
+      }
+
+      await loadFilesFromApi(currentPath);
+    } catch (err) {
+      console.error(err);
+      alert('Error during paste operation');
+    } finally {
+      updateContextMenuState();
+    }
+  }
+
+  // Delete: Call backend /delete API
+  async function handleFmDelete() {
+    if (!fmContextTarget || fmContextTarget.type !== 'entry') return;
+
+    const { name, isDir } = fmContextTarget;
+    const text = isDir
+            ? `Are you sure you want to delete folder "${name}" and all its contents?`
+            : `Are you sure you want to delete file "${name}"?`;
+    if (!confirm(text)) return;
+
+    const payload = {
+      path: currentPath || '.',
+      name,
+      is_dir: isDir,
+    };
+
+    try {
+      const res = await fetch(`${API_FILES}/delete`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (!res.ok) {
+        let msg = `Delete failed: ${res.status}`;
+        try {
+          const data = await res.json();
+          if (data.detail) msg = data.detail;
+        } catch (_) {}
+        alert(msg);
+        return;
+      }
+
+      await loadFilesFromApi(currentPath);
+    } catch (err) {
+      console.error(err);
+      alert('Error during delete operation');
+    }
+  }
+
+</script>
 </body>
 </html>

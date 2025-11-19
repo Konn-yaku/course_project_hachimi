@@ -1,29 +1,38 @@
-# app/services/tmdb.py
-
 import os
 import requests
 from guessit import guessit
 from app.core.config import settings
 
-# 配置
+# TMDB API Configuration
 BASE_URL = "https://api.themoviedb.org/3"
 IMAGE_BASE_URL = "https://image.tmdb.org/t/p/w500"
-LANGUAGE = "zh-CN"
+LANGUAGE = "zh-CN"  # Request results in Chinese (Change to 'en-US' for English)
 
-# 常见的视频后缀，用于判断是否需要触发识别
+# Common video file extensions used to determine if smart recognition should be triggered
 VIDEO_EXTENSIONS = {'.mp4', '.mkv', '.avi', '.mov', '.wmv', '.flv', '.webm', '.m4v'}
 
 
 def is_video_file(filename: str) -> bool:
-    """检查文件扩展名是否为视频"""
+    """
+    Check if the file extension corresponds to a video file.
+    """
     ext = os.path.splitext(filename)[1].lower()
     return ext in VIDEO_EXTENSIONS
 
 
 def get_tmdb_info(title, year=None):
-    """根据标题和年份向 TMDB 查询信息"""
+    """
+    Query The Movie Database (TMDB) for media information based on title and optional year.
+
+    Args:
+        title (str): The cleaned title extracted from the filename.
+        year (int, optional): The release year extracted from the filename.
+
+    Returns:
+        dict: The best matching result dictionary from TMDB, or None if no match found.
+    """
     if not settings.TMDB_API_KEY:
-        print("⚠️ 警告: 未配置 TMDB_API_KEY")
+        print("⚠️ Warning: TMDB_API_KEY is not configured.")
         return None
 
     endpoint = f"{BASE_URL}/search/multi"
@@ -42,19 +51,21 @@ def get_tmdb_info(title, year=None):
         if not results:
             return None
 
-        # --- 智能匹配逻辑 ---
+        # --- Smart Matching Logic ---
         best_match = None
 
-        # 1. 优先匹配年份
+        # 1. Priority: Match by Year
         if year:
             for item in results:
+                # Movies use 'release_date', TV shows use 'first_air_date'
                 release_date = item.get("release_date") or item.get("first_air_date")
                 if release_date and str(year) in release_date:
                     best_match = item
                     break
 
-                    # 2. 如果没匹配到年份，取第一个 Movie 或 TV
+        # 2. Fallback: If no year match or year not provided, take the first Movie or TV result
         if not best_match:
+            # Filter results to include only 'movie' or 'tv' types (exclude 'person')
             media_results = [r for r in results if r.get('media_type') in ('movie', 'tv')]
             if media_results:
                 best_match = media_results[0]
@@ -64,38 +75,47 @@ def get_tmdb_info(title, year=None):
         return best_match
 
     except Exception as e:
-        print(f"TMDB 连接错误: {e}")
+        print(f"TMDB Connection Error: {e}")
         return None
 
 
 def download_poster(poster_path: str, save_dir: str):
-    """下载海报并保存为 poster.jpg"""
+    """
+    Download the poster image from TMDB and save it as 'poster.jpg' in the target directory.
+    """
     if not poster_path:
         return
 
     url = f"{IMAGE_BASE_URL}{poster_path}"
     save_path = os.path.join(save_dir, "poster.jpg")
 
-    # 如果海报已经存在，就不重复下载了
+    # If poster already exists, skip downloading to save bandwidth
     if os.path.exists(save_path):
         return
 
     try:
-        print(f"正在下载海报: {url}")
+        print(f"Downloading poster: {url}")
         response = requests.get(url, timeout=15)
         if response.status_code == 200:
             with open(save_path, "wb") as f:
                 f.write(response.content)
-            print("海报下载成功")
+            print("Poster download successful")
     except Exception as e:
-        print(f"海报下载失败: {e}")
+        print(f"Poster download failed: {e}")
 
 
 def analyze_filename(filename: str):
     """
-    分析文件名，返回 (官方标题, 媒体类型, 海报路径, 原始Guessit信息)
-    如果识别失败，返回 (None, None, None, guess_info)
+    Analyze the filename to extract metadata and query TMDB.
+
+    Args:
+        filename (str): The name of the uploaded file.
+
+    Returns:
+        tuple: (official_title, media_type, poster_path, raw_guessit_info)
+               Returns (None, None, None, guess_info) if recognition fails.
     """
+    # Use 'guessit' library to parse the filename (extracts title, year, episode, etc.)
     guess = guessit(filename)
     clean_title = guess.get('title')
     guess_year = guess.get('year')
@@ -103,6 +123,7 @@ def analyze_filename(filename: str):
     if not clean_title:
         return None, None, None, guess
 
+    # Query TMDB with extracted info
     tmdb_result = get_tmdb_info(clean_title, guess_year)
 
     if tmdb_result:
