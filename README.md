@@ -1,24 +1,98 @@
-# Home Cloud: LAN-based file storage with a web front end
+# Home Cloud: LAN-based Media Center & File Manager
 
-## **Main Functions：**
+**Home Cloud** is a lightweight, self-hosted storage solution designed for home networks. It combines a traditional file manager with an intelligent media center, powered by **FastAPI** and **TMDB (The Movie Database)** integration.
 
-1. **Quick scraping and navigation on the main page**
-    The homepage should include a “media overview” panel that automatically scans and indexes newly added content. It should display quick-access cards for “recently added,” “continue watching,” or “by genre/year/tag.” Users should be able to refresh metadata (titles, posters, actors, duration, resolution) with one click. Navigation should feel seamless, with a persistent top bar (Library, File Manager, Transfer Queue, User Center, Settings) and breadcrumb navigation to move between folders and subdirectories efficiently.
-2. **File upload, download, and storage operations**
-    Provide multiple ways to move data: (1) direct browser uploads with drag-and-drop, chunked uploading, resume support, and batch folder upload; (2) network mounting (WebDAV, SMB, or NFS) with clear connection URLs; and (3) CLI/desktop client examples (e.g., rclone, curl). Downloads should allow direct links, batch zips, rate limits, and expiring share links with optional passwords. File integrity checks (MD5/SHA256) and storage policies (single disk, RAID, or object storage backends) should be included. Deleted files move to a recycle bin, and versioning enables rolling back to earlier file states.
-3. **User login interface**
-    The login page should support username/email + password, optional single sign-on (OIDC/SAML), and multi-factor authentication (TOTP, SMS, hardware keys). Enforce password strength checks, attempt throttling, and optional CAPTCHA. Session management should include “remember me” cookies (HttpOnly, SameSite strict), expiration policies, and remote logout for compromised sessions. Registration may be open, invite-only, or admin-approved. First-time login should trigger a setup wizard for personal folders and preferences.
-4. **Image and movie file preview**
-    Images should display thumbnails instantly, with EXIF data available, and options for full-resolution or screen-fitted view. Slideshow mode supports batch viewing. Video previews should support both direct playback and server-side transcoding (adaptive bitrate streaming via HLS/DASH). Features include subtitle loading (.srt/.ass), multiple audio tracks, playback speed control, progress memory, and auto-play for series. Video thumbnails should show a timeline preview, and users can capture stills or generate contact sheets. Mobile playback should include gesture controls for seeking, brightness, and volume.
+Unlike complex NAS systems, Home Cloud focuses on simplicity: **No database required**, **Filesystem-based**, and **Open access for LAN usage**.
 
-## **Extended Function(If possible)**:
+## **🌟 Key Features**
 
-1. **External Connection Issues (Virtual LAN, FRP)**
-   Many Internet Service Providers do not assign a true **public IP address** to residential or small-business users, instead placing them behind **Carrier-Grade NAT (CGNAT)**. This prevents direct inbound connections from outside the local network, making it difficult to expose services like a home cloud.
+### 1. **Intelligent Media Upload & Organization**
+The core highlight of the system. It transforms a messy file upload process into an organized library.
+* **Smart Recognition:** Automatically detects video files during upload.
+* **TMDB Integration:** Queries The Movie Database API to identify Movies and TV Shows.
+* **Auto-Organization:**
+    * Renames/Moves files into dedicated folders based on the official title.
+    * **Auto-Poster:** Downloads the official cover art/poster automatically.
+* **Fallback:** Non-video files are uploaded normally as standard attachments.
 
-   To address this, the system should provide built-in options for external connectivity:
+### 2. **Visual Media Library**
+Dedicated views for your entertainment collection, separated from raw files.
+* **Anime & Movies Views:** Automatically scans your media directories (`/Anime`, `/Movies`) and displays content in a rich gallery grid with posters and titles.
+* **Smart Indexing:** Intelligently ignores non-media files (like subtitles or nfo files) when generating the gallery view to keep the interface clean.
 
-   - **Virtual LAN (VLAN / VPN tunneling):**
-     Allow the user to join devices across different networks into a single virtual local network. This can be implemented through Tailscale, ZeroTier, or WireGuard-based tunnels. Users see all devices as if they were on the same LAN, with private IPs assigned to each node, enabling seamless file access and media streaming.
-   - **FRP (Fast Reverse Proxy):**
-     Provide support for FRP as a lightweight, self-hosted NAT traversal tool. By deploying an FRP server on a VPS or cloud instance with a public IP, the home server can create a persistent outbound tunnel. This tunnel forwards incoming traffic (e.g., HTTP/HTTPS, SMB, SSH) back into the private network. The system should include a configuration UI for FRP, including protocol selection, port mapping, encryption, and optional authentication.
+### 3. **Full-Featured File Manager**
+A robust explorer for managing your server's filesystem.
+* **Browse:** Navigate through folders and files seamlessly.
+* **Management:** Create new folders (`Mkdir`) and delete unwanted content (`Delete` supports recursive folder deletion).
+* **Upload:** Drag-and-drop upload support.
+
+### 4. **LAN-First Architecture**
+* **No Authentication:** Intentionally designed without login barriers for frictionless access within a trusted home network (Family/Roommates).
+* **Direct Playback:** Stream videos and view images directly in the browser (supports native web formats like MP4, WebM, JPG, PNG, WebP).
+
+---
+
+## **🛠️ Tech Stack**
+
+* **Backend:** Python (FastAPI, Uvicorn)
+* **Frontend:** Vanilla HTML/CSS/JS (Single Page Application design)
+* **External API:** TMDB (The Movie Database) for metadata processing
+
+---
+
+## **🚀 Installation & Setup**
+
+### 1. Prerequisites
+* Python 3.8+
+* A TMDB API Key (Get it from [themoviedb.org](https://www.themoviedb.org/))
+
+### 2. Clone & Install
+```bash
+# Clone the repository
+git clone [https://github.com/your-repo/home-cloud.git](https://github.com/your-repo/home-cloud.git)
+
+# Enter backend directory
+cd home-cloud/backend
+
+# Create virtual environment
+python -m venv .venv
+
+# Activate Virtual Environment:
+# Windows:
+.\.venv\Scripts\activate
+# Mac/Linux:
+source .venv/bin/activate
+
+# Install dependencies
+pip install fastapi uvicorn[standard] requests guessit python-multipart pydantic-settings
+```
+
+### 3. Configuration
+Create a .env file in the backend directory with the following content:
+```bash
+# Storage location for your files (ensure this folder exists or the app will create it)
+MEDIA_ROOT_PATH="./my_media_files"
+
+# Allow frontend access (CORS Origin)
+# If using Live Server, this is usually [http://127.0.0.1:5500](http://127.0.0.1:5500)
+FRONTEND_ORIGIN="[http://127.0.0.1:5500](http://127.0.0.1:5500)"
+
+# Required for Smart Uploads
+TMDB_API_KEY="YOUR_TMDB_API_KEY_HERE"
+```
+
+### 4. Run
+Start the backend server:
+```bash
+uvicorn app.main:app --reload
+```
+The backend will run at http://127.0.0.1:8000
+
+Start the frontend (using Live Server or any static host) and connect.
+
+## 🔮 Future Roadmap
+* Video Transcoding: Implement HLS/DASH for better playback compatibility on mobile devices.
+
+* External Access: Integration with FRP or Tailscale for accessing files outside the home network.
+
+* User System: Re-enable the authentication module (Argon2/JWT) for multi-user support.
