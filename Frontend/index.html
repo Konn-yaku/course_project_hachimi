@@ -824,14 +824,6 @@
         });
       }
 
-      function openPhotoPreview(url, altText = '') {
-        if (!photoOverlay || !photoOverlayImg) return;
-        photoOverlayImg.src = url;
-        photoOverlayImg.alt = altText || '';
-        photoOverlay.classList.add('active');
-      }
-
-
       const rowsHtml = items.map(it => {
         const icon = it.is_dir ? '📁' : '📄';
         const type = it.is_dir ? 'Folder' : (it.extension || 'File');
@@ -859,6 +851,12 @@
         const display = currentPath === '.' ? 'Media' : `Media / ${currentPath}`;
         fmPathEl.textContent = display;
       }
+    }
+    function openPhotoPreview(url, altText = '') {
+      if (!photoOverlay || !photoOverlayImg) return;
+      photoOverlayImg.src = url;
+      photoOverlayImg.alt = altText || '';
+      photoOverlay.classList.add('active');
     }
 
     function isImageFile(name) {
