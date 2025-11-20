@@ -1,5 +1,7 @@
 # Home Cloud: LAN-based Media Center & File Manager
 
+[Report Video Link](https://youtu.be/XStHJMKqO7Q)
+
 **Home Cloud** is a lightweight, self-hosted storage solution designed for home networks. It combines a traditional file manager with an intelligent media center, powered by **FastAPI** and **TMDB (The Movie Database)** integration.
 
 Unlike complex NAS systems, Home Cloud focuses on simplicity: **No database required**, **Filesystem-based**, and **Open access for LAN usage**.
